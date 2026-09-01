@@ -1,0 +1,128 @@
+#!/bin/sh
+
+set -e
+
+APP_BIN=${APP_BIN:-/usr/bin/FirmwareUpdater}
+APP_ARGS=${APP_ARGS:-}
+PID_FILE=${PID_FILE:-/var/run/FirmwareUpdater.pid}
+LOG_FILE=${LOG_FILE:-/var/log/FirmwareUpdater.log}
+
+start_stop_daemon()
+{
+	if [ -x /sbin/start-stop-daemon ]; then
+		/sbin/start-stop-daemon "$@"
+	elif command -v start-stop-daemon >/dev/null 2>&1; then
+		start-stop-daemon "$@"
+	else
+		return 127
+	fi
+}
+
+start_stop_daemon_supports_no_close()
+{
+	start_stop_daemon --help 2>&1 | grep -q -- '--no-close'
+}
+
+log()
+{
+	echo "[$(date +"%F %T")] S99FirmwareUpdater: $*"
+}
+
+is_running()
+{
+	if [ -f "$PID_FILE" ]; then
+		PID=$(cat "$PID_FILE" 2>/dev/null || true)
+		if [ -n "$PID" ] && kill -0 "$PID" 2>/dev/null; then
+			return 0
+		fi
+	fi
+	return 1
+}
+
+start_app()
+{
+	if [ ! -x "$APP_BIN" ]; then
+		log "binary not found or not executable: $APP_BIN"
+		exit 1
+	fi
+
+	if is_running; then
+		log "already running (pid=$(cat "$PID_FILE"))"
+		return 0
+	fi
+
+	mkdir -p "$(dirname "$PID_FILE")"
+	mkdir -p "$(dirname "$LOG_FILE")"
+
+	if start_stop_daemon_supports_no_close && \
+		start_stop_daemon -Sqbm --no-close -p "$PID_FILE" -x "$APP_BIN" -- $APP_ARGS >>"$LOG_FILE" 2>&1; then
+		:
+	elif start_stop_daemon -Sqbm -p "$PID_FILE" -x /bin/sh -- -c "exec \"$APP_BIN\" $APP_ARGS >>\"$LOG_FILE\" 2>&1"; then
+		:
+	else
+		# Fallback when start-stop-daemon is unavailable
+		nohup "$APP_BIN" $APP_ARGS >>"$LOG_FILE" 2>&1 &
+		echo $! > "$PID_FILE"
+	fi
+
+	log "started"
+}
+
+stop_app()
+{
+	if ! is_running; then
+		log "not running"
+		rm -f "$PID_FILE"
+		return 0
+	fi
+
+	PID=$(cat "$PID_FILE" 2>/dev/null || true)
+	if [ -n "$PID" ]; then
+		kill "$PID" 2>/dev/null || true
+		for i in $(seq 1 30); do
+			if ! kill -0 "$PID" 2>/dev/null; then
+				break
+			fi
+			sleep 0.1
+		done
+
+		if kill -0 "$PID" 2>/dev/null; then
+			kill -9 "$PID" 2>/dev/null || true
+		fi
+	fi
+
+	rm -f "$PID_FILE"
+	log "stopped"
+}
+
+status_app()
+{
+	if is_running; then
+		log "running (pid=$(cat "$PID_FILE"))"
+		return 0
+	fi
+
+	log "stopped"
+	return 1
+}
+
+ACTION=${1:-start}
+case "$ACTION" in
+	start)
+		start_app
+		;;
+	stop)
+		stop_app
+		;;
+	restart)
+		stop_app
+		start_app
+		;;
+	status)
+		status_app
+		;;
+	*)
+		echo "Usage: $0 {start|stop|restart|status}" >&2
+		exit 1
+		;;
+esac

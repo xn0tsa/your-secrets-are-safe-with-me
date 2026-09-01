@@ -1,0 +1,301 @@
+#!/bin/sh
+
+export LD_LIBRARY_PATH="/data/main/lib:/data/main/_internal/lib:/data/main/_internal:$LD_LIBRARY_PATH"
+export PYTHONPATH="/data/main/lib:/data/main/lib/site-packages:/data/main/_internal/lib:/data/main/_internal/site-packages:/data/main/_internal:$PYTHONPATH"
+
+update_img()
+{
+	imgs="$@"
+	for img in ${imgs}
+	do
+		block_name="/dev/block/by-name/$(basename $img .img)"
+		echo "start update ${img}"
+		block_size=$(fdisk -l "$block_name" 2>/dev/null | awk -v dev="$block_name" '
+		  $0 ~ "^Disk " dev ":" {print $5; exit}
+		  $0 ~ "^Disk " && dev ~ "/by-name/" {
+			split($2, arr, ":");
+			cmd = "readlink -f " arr[1];
+			cmd | getline resolved_dev;
+			close(cmd);
+			if (resolved_dev == dev) {print $5; exit}
+		  }
+		')
+		#暂时不考虑in mount
+		if [ -e $block_name ]; then
+			dd if=$img of=$block_name bs=$block_size count=1 status=progress
+		fi
+
+		echo "update ${img} ok"
+	done
+}
+
+unzip_file()
+{
+	local need_reboot=false
+
+	if [ ! -d "/data/main" ]; then
+		mkdir -p "/data/main"
+	fi
+
+	if [ ! -d "/data/main/ores" ]; then
+		mkdir -p "/data/main/ores"
+	fi
+
+	if [ ! -d "/data/main/db" ]; then
+		mkdir -p "/data/main/db"
+	fi
+
+	if [ ! -d "/data/main/model" ]; then
+		mkdir -p "/data/main/model"
+	fi
+
+	if [ ! -d "/data/main/linux/cfg" ]; then
+		mkdir -p "/data/main/linux/cfg"
+	fi
+
+	if [ -f "/data/download/update" ]; then
+
+		release_flag=False
+
+		if grep -q "release" "/data/download/version.json"; then
+			echo "release version"
+			release_flag="True"
+		else
+			echo "debug version"
+			release_flag="False"
+		fi
+
+		if [ -f  "/data/download/res.zip" ]; then
+			rm -rf "/data/main/res"
+			echo "unzip res.zip ..." >> /data/main/debug.log
+			unzip -o -q "/data/download/res.zip" -d "/data/main/"
+			echo "unzip res.zip finish" >> /data/main/debug.log
+			sync
+			# mv "/data/main/res/w" "/data/main/res/w_encryption"
+		fi
+
+		if [ -f  "/data/download/_internal.zip" ]; then
+			rm -rf "/data/main/_internal"
+			echo "unzip _internal.zip ..." >> /data/main/debug.log
+			unzip -o -q "/data/download/_internal.zip" -d "/data/main/"
+			echo "unzip _internal.zip finish" >> /data/main/debug.log
+		fi
+
+		if [ -f  "/data/download/lib.zip" ]; then
+			rm -rf "/data/main/lib"
+			echo "unzip lib.zip ..." >> /data/main/debug.log
+			unzip -o -q "/data/download/lib.zip" -d "/data/main/"
+			echo "unzip lib.zip finish" >> /data/main/debug.log
+		fi
+
+		if [ -f  "/data/download/EL.zip" ]; then
+			# rm -rf "/data/main/ores/EL"
+			echo "unzip EL.zip ..." >> /data/main/debug.log
+			unzip -o -q "/data/download/EL.zip" -d "/data/main/ores/"
+			echo "unzip EL.zip finish" >> /data/main/debug.log
+		fi
+
+		if [ -f  "/data/download/MC.zip" ]; then
+			# rm -rf "/data/main/ores/MC"
+			echo "unzip MC.zip ..." >> /data/main/debug.log
+			unzip -o -q "/data/download/MC.zip" -d "/data/main/ores/"
+			echo "unzip MC.zip finish" >> /data/main/debug.log
+		fi
+
+		if [ -f  "/data/download/PX.zip" ]; then
+			# rm -rf "/data/main/ores/PX"
+			echo "unzip PX.zip ..." >> /data/main/debug.log
+			unzip -o -q "/data/download/PX.zip" -d "/data/main/ores/"
+			echo "unzip PX.zip finish" >> /data/main/debug.log
+		fi
+
+		if [ -f  "/data/download/ELK.zip" ]; then
+			# rm -rf "/data/main/ores/ELK"
+			echo "unzip ELK.zip ..." >> /data/main/debug.log
+			unzip -o -q "/data/download/ELK.zip" -d "/data/main/ores/"
+			echo "unzip ELK.zip finish" >> /data/main/debug.log
+		fi
+
+		if [ -f "/data/download/chat.zip" ]; then
+			echo "unzip chat.zip ..." >> /data/main/debug.log
+			unzip -o -q "/data/download/chat.zip" -d "/data/main/db"
+			echo "unzip chat.zip finish" >> /data/main/debug.log
+		fi
+
+		if [ -f "/data/download/divination.zip" ]; then
+			echo "unzip divination.zip ..." >> /data/main/debug.log
+			unzip -o -q "/data/download/divination.zip" -d "/data/main/db"
+			echo "unzip divination.zip finish" >> /data/main/debug.log
+		fi
+
+		if [ -f "/data/download/instruction.zip" ]; then
+			echo "unzip instruction.zip ..." >> /data/main/debug.log
+			unzip -o -q "/data/download/instruction.zip" -d "/data/main/db"
+			echo "unzip instruction.zip finish" >> /data/main/debug.log
+		fi
+
+		if [ -f "/data/download/story.zip" ]; then
+			echo "unzip story.zip ..." >> /data/main/debug.log
+			unzip -o -q "/data/download/story.zip" -d "/data/main/db"
+			echo "unzip story.zip finish" >> /data/main/debug.log
+		fi
+
+		if [ -f "/data/download/asrmodel.zip" ]; then
+			rm -rf "/data/main/model/asr"
+			echo "unzip asrmodel.zip ..." >> /data/main/debug.log
+			unzip -o -q "/data/download/asrmodel.zip" -d "/data/main/model"
+			echo "unzip asrmodel.zip finish" >> /data/main/debug.log
+		fi
+
+		if [ -f "/data/download/detectmodel.zip" ]; then
+			rm -rf "/data/main/model/detect"
+			echo "unzip detectmodel.zip ..." >> /data/main/debug.log
+			unzip -o -q "/data/download/detectmodel.zip" -d "/data/main/model"
+			echo "unzip detectmodel.zip finish" >> /data/main/debug.log
+		fi
+
+		if [ -f "/data/download/kwsmodel.zip" ]; then
+			rm -rf "/data/main/model/kws"
+			echo "unzip kwsmodel.zip ..." >> /data/main/debug.log
+			unzip -o -q "/data/download/kwsmodel.zip" -d "/data/main/model"
+			echo "unzip kwsmodel.zip finish" >> /data/main/debug.log
+		fi
+
+		if [ -f "/data/download/ttsmodel.zip" ]; then
+			rm -rf "/data/main/model/tts"
+			echo "unzip ttsmodel.zip ..." >> /data/main/debug.log
+			unzip -o -q "/data/download/ttsmodel.zip" -d "/data/main/model"
+			echo "unzip ttsmodel.zip finish" >> /data/main/debug.log
+		fi
+
+		if [ -f "/data/download/vadmodel.zip" ]; then
+			rm -rf "/data/main/model/vad"
+			echo "unzip vadmodel.zip ..." >> /data/main/debug.log
+			unzip -o -q "/data/download/vadmodel.zip" -d "/data/main/model"
+			echo "unzip vadmodel.zip finish" >> /data/main/debug.log
+		fi
+
+		if [ -f "/data/download/cfg.zip" ]; then
+			echo "unzip cfg.zip ..." >> /data/main/debug.log
+			unzip -o -q "/data/download/cfg.zip" -d "/data/main/linux/"
+			echo "unzip cfg.zip finish" >> /data/main/debug.log
+		fi
+
+		if [ -f "/data/download/bin.zip" ]; then
+			echo "unzip bin.zip ..." >> /data/main/debug.log
+			killall -9 FirmwareUpdater
+			unzip -o -q "/data/download/bin.zip" -d "/usr/bin/"
+			chmod 0755 /usr/bin -R
+			echo "unzip bin.zip finish" >> /data/main/debug.log
+			/etc/init.d/S99FirmwareUpdater start
+		fi
+
+		if [ -f  "/data/download/main.zip" ]; then
+			if [ $release_flag == "True" ]; then
+				rm -rf "/data/main/main.py"
+				rm -rf "/data/main/app"
+				rm -rf "/data/main/FirmwareBase"
+				rm -rf "/data/main/models"
+				rm -rf "/data/main/module"
+				rm -rf "/data/main/utils"
+			fi
+			if [ $release_flag == "False" ]; then
+				rm -rf "/data/main/main"
+			fi
+			echo "unzip main.zip ..." >> /data/main/debug.log
+			unzip -o -q "/data/download/main.zip" -d "/data/main/"
+			echo "unzip main.zip finish" >> /data/main/debug.log
+		fi
+
+		if [ -f  "/data/download/web.zip" ]; then
+			echo "unzip web.zip ..." >> /data/main/debug.log
+			unzip -o -q "/data/download/web.zip" -d "/data/main/"
+			chmod 0755 /data/main/web/cgi-bin/*
+			echo "unzip web.zip finish" >> /data/main/debug.log
+		fi
+
+		if [ -f  "/data/download/version.json" ]; then
+			mv "/data/download/version.json" "/data/main/"
+		fi
+
+
+		if [ -f  "/data/download/firmware.zip" ]; then
+			echo "unzip firmware.zip ..." >> /data/main/debug.log
+			unzip -o -q "/data/download/firmware.zip" -d "/data/download/"
+			echo "unzip firmware.zip finish" >> /data/main/debug.log
+
+			if [ -f  "/data/download/uboot.img" ]; then
+				echo "update uboot.img ..." >> /data/main/debug.log
+				update_img /data/download/uboot.img
+				echo "update uboot.img finish" >> /data/main/debug.log
+			fi
+
+			if [ -f  "/data/download/enva.img" ]; then
+				echo "update enva.img ..." >> /data/main/debug.log
+				update_img /data/download/enva.img
+				echo "update enva.img finish" >> /data/main/debug.log
+			fi
+
+			if [ -f  "/data/download/amp.img" ]; then
+				echo "update amp.img ..." >> /data/main/debug.log
+				update_img /data/download/amp.img
+				echo "update amp.img finish" >> /data/main/debug.log
+			fi
+
+			if [ -f  "/data/download/boot.img" ]; then
+				echo "update boot.img ..." >> /data/main/debug.log
+				update_img /data/download/boot.img
+				echo "update boot.img finish" >> /data/main/debug.log
+			fi
+
+			need_reboot=true
+
+		fi
+
+		sync
+
+		rm -rf /data/download/update
+		rm -rf /data/download/*.zip
+		rm -rf /data/download/*.img
+
+		if $need_reboot; then
+			sync
+			sleep 1
+			reboot
+		fi
+
+	else
+		rm -rf /data/download/*
+	fi
+}
+
+case "$1" in
+	start)
+		unzip_file
+		sleep 5
+		cd /data/main
+		if [ -f /data/main/main ]; then
+			chmod 0755 main
+			./main &
+		fi
+
+		if [ -f /data/main/main.py ]; then
+			python main.py &
+		fi
+		;;
+	stop)
+		killall -9 python
+		killall -9 main
+		;;
+	restart)
+		"$0" stop
+		sleep 1
+		"$0" start
+
+		;;
+	*)
+		echo "Usage: [start|stop|restart]" >&2
+		exit 3
+		;;
+esac
+

@@ -1,0 +1,86 @@
+# Findings: Infrastructure & servers (EK-25 → EK-29, EK-49, EK-50)
+
+One rented box runs the whole company: the admin API, the firmware CDN origin, the legacy PHP, the databases, the panels. It was co-hosted with two Pakistani institutions: `nicon.edu.pk` (vocational training institute, Rawalpindi) and `qmmb.gov.pk` (Quaid-i-Azam Mazar Management Board, the federal body maintaining the mausoleum of Pakistan's founder). Proof of hosting: Let's Encrypt certs for both domains issued on the box on 2026-03-22 (ACME validation requires the DNS to point there). Same user, same php-fpm, no isolation. Both domains moved off the box later in 2026; their vhosts, expired certs, and the webshells remain. Main server: `45.32.81.33` (Vultr, CentOS 7 EOL, kernel 3.10): a multi-tenant **BaoTa** box hosting the admin API (`station-middleware:1.8.2`, Docker, root), the CDN file origin, the legacy PHP API (:789), the BaoTa panel (:8888), phpMyAdmin (:888), FTP (:21), local MySQL (:3306): and two third-party Pakistani sites: `nicon.edu.pk` (a vocational training institute, Rawalpindi) and `qmmb.gov.pk` (the Quaid-i-Azam Mazar Management Board, maintaining the mausoleum of Pakistan's founder). Alibaba: `8.129.236.211` / `8.221.114.171` (VPC `192.168.0.x`: internal MySQL/Redis, MEMORY_SRV).
+
+---
+
+<a id="EK-25"></a>
+## EK-25 · CRITICAL · Public production MySQL RDS
+
+`rm-2ze4h2mqmkf6c06i1mo.mysql.rds.aliyuncs.com:3306`, account `energizelab_admin` with **GRANT OPTION from `%`, no TLS**: root-equivalent: 8 databases / 173 tables. Contains: `energize_user_data` (65K accounts), `chat_data` (8.3M conversations with IPs, 31,450 extracted profiles), `factory_data` (159K units), forgotten CMSes (`xunrui_web_data`, 86 tables; `web_data` with 317K visitor IPs), 100K decoded device-auth logs, the complete RBAC.
+
+```bash
+mysql -h rm-2ze4h2mqmkf6c06i1mo.mysql.rds.aliyuncs.com -u energizelab_admin -p'[redacted]' -e 'SELECT VERSION();'
+```
+
+**Retest 2026-09-01**: ❌ OPEN (connection + VERSION() OK).
+**Fix**: VPC IP whitelist, `require_secure_transport=ON`, restricted application account without GRANT OPTION.
+
+---
+
+<a id="EK-26"></a>
+## EK-26 · CRITICAL · Public production Redis
+
+`123.57.147.163:6379` with the vault password: **162,099 keys**: `auth-{chipid}` (SignGuard device identities), `memory-{mode}-{chipid}` (AI memory flags), `celery-task-meta-*`. Write access (not exercised) = rewriting any robot's memories/auth state and manipulating the task queue.
+
+```bash
+redis-cli -h 123.57.147.163 -a '[redacted]' PING   # PONG
+```
+
+**Retest 2026-09-01**: ❌ OPEN (AUTH + PONG + DBSIZE).
+**Fix**: VPC-only bind, strong AUTH, `rename-command`, firewall.
+
+---
+
+<a id="EK-27"></a>
+## EK-27 · CRITICAL · SSH root, shared box, EOL stack, open firewall
+
+- Password-based SSH root (credentials in the vault), key auth disabled, 248,428 cumulative bruteforce failures (active attacks observed live), no fail2ban.
+- Co-location with a federal board and an education institute (proved by on-box ACME certificates, 2026-03-22): transverse compromise.
+- Firewall: 14 all-allow rules (21/22/789/888/3306/8000/8888/9090 open to the internet).
+- CentOS 7 EOL, MySQL 5.7 EOL, PHP 7.4 EOL; BaoTa panel: security score 10/100, every protection disabled, MySQL passwords visible in one click, production Docker controllable from the UI.
+- Node runs as root inside the production container.
+
+**Retest 2026-09-01**: ❌ OPEN (root login works; ports 21/22/789/888/3306/8000/8888/9090 open).
+**Fix**: immediately isolate Energizelab assets off the shared box; SSH keys only; firewall hardening; OS migration.
+
+---
+
+<a id="EK-28"></a>
+## EK-28 · CRITICAL · Pre-auth RCE on the legacy PHP API (:789)
+
+`panxer.php` / `maticontroller.php` / `update.php` (PHP 7.4, vhost :789):
+
+```php
+$re = exec("python3.10 panxer.py " . json_encode(json_decode(bzdecompress(file_get_contents('php://input')))));
+```
+
+`json_encode` escapes neither `$()` nor backticks → command injection as `www`, **without authentication** (a `/tmp` marker was executed then deleted, 2026-08-23). The `update.php` wrapper sits on the hot path of 42,339 actively reporting robots. Bonus: total SQLi in `panxer.py` (raw `chip_id` interpolation), 100-year JWTs (same SECRET_KEY as NestJS: see [EK-10](01-cloud-api.md#EK-10)), legacy databases with 34,532 + 1,556 accounts.
+
+**Retest 2026-09-01**: ❌ OPEN (liveness proven with a non-executable probe: no commands run).
+**Fix**: delete the wrappers, close :789, purge the legacy databases.
+
+---
+
+<a id="EK-29"></a>
+<a id="EK-50"></a>
+## EK-29 / EK-50 · CRITICAL · Active third-party compromise + server backdoor
+
+- **~19 webshells** on `nicon.edu.pk` (vocational institute, Rawalpindi; same `www` user, same php-fpm) deployed March 2026, one day after Let's Encrypt certs for both Pakistani domains were issued on this very box (2026-03-22 05:09 and 05:16 GMT, the cryptographic proof of co-hosting), operated from C2 `mozv6e.ncndwx.top` (IPs 23.146.72.90, 103.167.135.37): a file-manager shell capable of browsing the whole disk, including `/www/wwwroot/45.32.81.33/software/energizelab/robot/` (OTA channels `103003`, `1103003`, `2103000`, `4101000`) owned by `www` **writable**: zero barrier to poisoning the fleet's firmware (P59-C-02).
+- **`/var/.a/`**: a Node.js root web-terminal backdoor (port 34188, password `[redacted]`, file manager + upload), created 2026-06-18, dormant (no node_modules) but installable with one command.
+- The OneAV antivirus: 291K heartbeat log lines, zero detections.
+
+**Retest 2026-09-01**: ❌ OPEN: `/var/.a` still present (observed via SSH).
+**Fix**: full forensics, purge the webshells and `/var/.a`, rotate every secret on the assumption the attacker already read the vault, migrate off the box, and report the C2. Then explain to two Pakistani institutions why they were co-located with a children's toy company on a box nobody monitored.
+
+---
+
+<a id="EK-49"></a>
+## EK-49 · HIGH · Employee credential hygiene
+
+- 5 active back-office accounts (including super-admin id=1) protected by **`123456`** (`md5(md5(pw)+salt)`, cracked offline).
+- The OTP sender's SMTP: `info@account.energizelab.com` / `[redacted]` (smtp.qcloudmail.com:465, AUTH validated) → "your verification code" phishing from the real domain. No reuse on personal mailboxes (tested, negative).
+
+**Retest 2026-09-01**: ❌ OPEN: super-admin hash read (read-only) still matches `md5(md5("123456")+salt)`, confirmed offline with zero login attempts.
+
+**Fix**: mandatory MFA on the back office, SMTP rotation, unique passwords.

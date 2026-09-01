@@ -1,0 +1,152 @@
+#!/bin/sh
+#
+# Starts dropbear sshd.
+#
+
+# Allow a few customizations from a config file
+test -r /etc/default/dropbear && . /etc/default/dropbear
+
+usb_hub_detect()
+{
+	local org_bus_group=(0x001 0x001 0x002)
+	local org_dev_group=(0x001 0x002 0x001)
+	local org_vid_group=(0x1d6b 0x1a86 0x1d6b)
+	local org_pid_group=(0x0002 0x8091 0x0001)
+
+	#hub
+	#Bus 001 Device 001: ID 1d6b:0002
+	#Bus 002 Device 001: ID 1d6b:0001
+
+	local new_bus_group
+	local new_dev_group
+	local new_vid_group
+	local new_pid_group
+
+	local same_idx
+	local diff_idx
+	local total_idx
+
+	local found=false
+
+	USB_STORAGE_DEVICES_VID=0x3535
+	USB_STORAGE_DEVICES_PID=0x5678
+
+	while IFS=" " read -r bus device vid pid; do
+		new_bus_group+=(0x$bus)
+		new_dev_group+=(0x$device)
+		new_vid_group+=(0x$vid)
+		new_pid_group+=(0x$pid)
+	done < <(lsusb | awk '{
+		bus = $2
+		device = $4
+		sub(/:$/, "", device)
+		split($6, id_parts, ":")
+		vid = id_parts[1]
+		pid = id_parts[2]
+		print bus, device, vid, pid
+	}')
+
+	for i in "${!new_bus_group[@]}"; do
+		for n in "${!org_bus_group[@]}"; do
+			if [[ ${new_bus_group[$i]} -eq ${org_bus_group[$n]} &&
+				${new_dev_group[$i]} -eq ${org_dev_group[$n]} &&
+				${new_vid_group[$i]} -eq ${org_vid_group[$n]} &&
+				${new_pid_group[$i]} -eq ${org_pid_group[$n]} ]]; then
+				same_idx+=($i)
+				break;
+			fi
+		done
+		total_idx+=($i)
+	done
+
+	declare -A seen
+	for item in "${same_idx[@]}"; do
+		[[ ${seen[$item]} ]] || seen[$item]=1
+	done
+	for item in "${total_idx[@]}"; do
+		[[ ${seen[$item]} ]] && unset 'seen[$item]' || seen[$item]=1
+	done
+	for key in "${!seen[@]}"; do
+		[[ ${seen[$key]} == 1 ]] && diff_idx+=("$key")
+	done
+
+	#found new usb device
+	if [ ${#diff_idx[@]} -gt 0 ];then
+		if [[ "${USB_STORAGE_DEVICES_VID}" != "" && "${USB_STORAGE_DEVICES_PID}" != "" ]];then
+			for i in ${diff_idx[@]}; do
+				if [[ ${new_vid_group[$i]} -eq ${USB_STORAGE_DEVICES_VID} && ${new_pid_group[$i]} -eq ${USB_STORAGE_DEVICES_PID} ]]; then
+					found=true
+					break;
+				fi
+			done
+		else
+			found=true
+		fi
+	fi
+
+	if $found;then
+		return 0
+	else
+		return 1
+	fi
+}
+
+start() {
+	DROPBEAR_ARGS="$DROPBEAR_ARGS -R"
+
+	# If /etc/dropbear is a symlink to /var/run/dropbear, and
+	#   - the filesystem is RO (i.e. we can not rm the symlink),
+	#     create the directory pointed to by the symlink.
+	#   - the filesystem is RW (i.e. we can rm the symlink),
+	#     replace the symlink with an actual directory
+	if [ -L /etc/dropbear \
+	     -a "$(readlink /etc/dropbear)" = "/var/run/dropbear" ]
+	then
+		if rm -f /etc/dropbear >/dev/null 2>&1; then
+			mkdir -p /etc/dropbear
+		else
+			echo "No persistent location to store SSH host keys. New keys will be"
+			echo "generated at each boot. Are you sure this is what you want to do?"
+			mkdir -p "$(readlink /etc/dropbear)"
+		fi
+	fi
+
+	printf "Starting dropbear sshd: "
+	umask 077
+
+	start-stop-daemon -S -q -p /var/run/dropbear.pid \
+		--exec /usr/sbin/dropbear -- $DROPBEAR_ARGS
+	[ $? = 0 ] && echo "OK" || echo "FAIL"
+}
+stop() {
+	printf "Stopping dropbear sshd: "
+	start-stop-daemon -K -q -p /var/run/dropbear.pid
+	[ $? = 0 ] && echo "OK" || echo "FAIL"
+}
+restart() {
+	stop
+	start
+}
+
+case "$1" in
+  start)
+	if [ "$(ctx_find)" != "" ];then
+		if usb_hub_detect;then
+			start
+		fi
+	else
+		start
+	fi
+	;;
+  stop)
+  	stop
+	;;
+  restart|reload)
+  	restart
+	;;
+  *)
+	echo "Usage: $0 {start|stop|restart}"
+	exit 1
+esac
+
+exit $?

@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eilik Security PoC — Eterniti Security</title>
+<style>
+  :root {
+    --red: #e53e3e; --orange: #dd6b20; --yellow: #d69e2e;
+    --bg: #0d1117; --bg2: #161b22; --bg3: #21262d;
+    --border: #30363d; --text: #c9d1d9; --muted: #8b949e;
+    --accent: #e53e3e;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 14px; }
+
+  /* Header */
+  .header { background: var(--bg2); border-bottom: 2px solid var(--red); padding: 16px 24px; display: flex; align-items: center; gap: 16px; position: sticky; top: 0; z-index: 100; }
+  .header .logo { font-size: 20px; font-weight: 700; color: var(--red); letter-spacing: -0.5px; }
+  .header .subtitle { color: var(--muted); font-size: 12px; }
+  .header .badge { background: var(--red); color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; margin-left: auto; }
+
+  /* Nav */
+  .nav { background: var(--bg2); border-bottom: 1px solid var(--border); padding: 0 24px; display: flex; gap: 4px; }
+  .nav-btn { background: none; border: none; color: var(--muted); padding: 12px 16px; cursor: pointer; font-size: 13px; border-bottom: 2px solid transparent; transition: all .2s; }
+  .nav-btn:hover { color: var(--text); }
+  .nav-btn.active { color: var(--text); border-bottom-color: var(--red); font-weight: 600; }
+
+  /* Stats bar */
+  .stats-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px,1fr)); gap: 12px; padding: 20px 24px; background: var(--bg2); border-bottom: 1px solid var(--border); }
+  .stat-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; }
+  .stat-num { font-size: 24px; font-weight: 700; color: var(--red); }
+  .stat-label { font-size: 11px; color: var(--muted); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .stat-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+  /* Main layout */
+  .main { padding: 20px 24px; }
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* Tables */
+  .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 8px; }
+  table { width: 100%; border-collapse: collapse; }
+  th { background: var(--bg3); color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); position: sticky; top: 0; }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--bg3); cursor: pointer; }
+
+  /* Badges */
+  .badge-red    { background: rgba(229,62,62,.15); color: #fc8181; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+  .badge-orange { background: rgba(221,107,32,.15); color: #fbb36d; padding: 2px 8px; border-radius: 4px; font-size: 11px; }
+  .badge-blue   { background: rgba(56,139,253,.15); color: #58a6ff; padding: 2px 8px; border-radius: 4px; font-size: 11px; }
+  .badge-green  { background: rgba(46,160,67,.15); color: #56d364; padding: 2px 8px; border-radius: 4px; font-size: 11px; }
+  .badge-gray   { background: rgba(139,148,158,.15); color: #8b949e; padding: 2px 8px; border-radius: 4px; font-size: 11px; }
+
+  /* Avatar */
+  .avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; background: var(--bg3); border: 1px solid var(--border); vertical-align: middle; }
+  .avatar-placeholder { width: 36px; height: 36px; border-radius: 50%; background: var(--bg3); border: 1px solid var(--border); display: inline-flex; align-items: center; justify-content: center; color: var(--muted); font-size: 14px; }
+
+  /* Search bar */
+  .toolbar { display: flex; gap: 10px; margin-bottom: 16px; align-items: center; flex-wrap: wrap; }
+  .search-input { background: var(--bg3); border: 1px solid var(--border); color: var(--text); padding: 8px 14px; border-radius: 6px; font-size: 13px; width: 280px; outline: none; }
+  .search-input:focus { border-color: var(--red); }
+  .btn { background: var(--bg3); border: 1px solid var(--border); color: var(--text); padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; transition: all .2s; }
+  .btn:hover { border-color: var(--red); }
+  .btn-primary { background: var(--red); border-color: var(--red); color: white; font-weight: 600; }
+  .btn-primary:hover { background: #c53030; }
+
+  /* Pagination */
+  .pagination { display: flex; gap: 8px; align-items: center; margin-top: 16px; justify-content: flex-end; }
+  .pagination span { color: var(--muted); font-size: 12px; }
+
+  /* Modal */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 200; overflow-y: auto; padding: 40px 20px; }
+  .modal-overlay.open { display: flex; justify-content: center; }
+  .modal { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; width: 100%; max-width: 900px; max-height: 90vh; overflow-y: auto; }
+  .modal-header { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 16px; position: sticky; top: 0; background: var(--bg2); z-index: 10; }
+  .modal-title { font-size: 18px; font-weight: 700; }
+  .modal-close { margin-left: auto; background: none; border: none; color: var(--muted); font-size: 20px; cursor: pointer; padding: 4px 8px; border-radius: 4px; }
+  .modal-close:hover { background: var(--bg3); color: var(--text); }
+  .modal-body { padding: 24px; }
+  .modal-section { margin-bottom: 28px; }
+  .modal-section h3 { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+
+  /* Profile grid */
+  .profile-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px,1fr)); gap: 10px; }
+  .profile-item { background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; }
+  .profile-key { font-size: 10px; color: var(--muted); text-transform: uppercase; margin-bottom: 4px; }
+  .profile-val { font-size: 13px; color: var(--text); word-break: break-all; }
+
+  /* Conversation list */
+  .conv-list { display: flex; flex-direction: column; gap: 8px; }
+  .conv-item { background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; padding: 12px 14px; }
+  .conv-meta { font-size: 11px; color: var(--muted); margin-bottom: 6px; display: flex; gap: 12px; }
+  .conv-q { color: #58a6ff; margin-bottom: 4px; font-size: 13px; }
+  .conv-a { color: var(--text); font-size: 13px; opacity: .85; }
+
+  /* Robot card */
+  .robot-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px,1fr)); gap: 12px; }
+  .robot-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; }
+  .robot-name { font-weight: 600; font-size: 14px; margin-bottom: 8px; }
+  .robot-detail { font-size: 12px; color: var(--muted); margin: 3px 0; }
+  .robot-detail span { color: var(--text); }
+
+  /* Geographic */
+  .geo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .geo-table { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+
+  /* Loading */
+  .loading { text-align: center; padding: 40px; color: var(--muted); }
+  .spinner { display: inline-block; width: 20px; height: 20px; border: 2px solid var(--border); border-top-color: var(--red); border-radius: 50%; animation: spin .8s linear infinite; margin-right: 8px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Alert */
+  .alert { background: rgba(229,62,62,.1); border: 1px solid rgba(229,62,62,.3); border-radius: 8px; padding: 16px 20px; margin-bottom: 20px; color: #fc8181; font-size: 13px; }
+  .alert strong { display: block; margin-bottom: 4px; font-size: 15px; }
+
+  /* Tags row */
+  .tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+
+  /* Truncate */
+  .truncate { max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* Empty */
+  .empty { text-align: center; padding: 60px 20px; color: var(--muted); }
+  .empty-icon { font-size: 40px; margin-bottom: 12px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="logo">⚠ Eilik Security PoC</div>
+    <div class="subtitle">Energizelab Eilik — Full Exposure Demo · Eterniti Security 2026</div>
+  </div>
+  <div class="badge" id="sync-badge">Loading...</div>
+</div>
+
+<div class="nav">
+  <button class="nav-btn active" onclick="showSection('overview')">Overview</button>
+  <button class="nav-btn" onclick="showSection('users')">Users</button>
+  <button class="nav-btn" onclick="showSection('conversations')">Conversations</button>
+  <button class="nav-btn" onclick="showSection('robots')">Robots</button>
+  <button class="nav-btn" onclick="showSection('geographic')">Geographic</button>
+  <button class="nav-btn" onclick="showSection('server')">🖥️ Server</button>
+  <button class="nav-btn" onclick="showSection('mysql')">🗄️ MySQL</button>
+  <button class="nav-btn" onclick="showSection('faces')">📷 Faces</button>
+  <button class="nav-btn" onclick="showSection('audio')">🎙️ Audio</button>
+</div>
+
+<!-- STATS BAR -->
+<div class="stats-bar" id="stats-bar">
+  <div class="stat-card"><div class="spinner"></div></div>
+</div>
+
+<!-- SECTIONS -->
+<div class="main">
+
+  <!-- OVERVIEW -->
+  <div id="section-overview" class="section active">
+    <div class="alert">
+      <strong>⚠ Security Research PoC — Eterniti Security · Authorized Pentest</strong>
+      This dashboard demonstrates the full scope of data exposure in Energizelab Eilik v3.0.0.
+      All data was obtained without authentication or exploitation — using only a free user account.
+    </div>
+    <div id="overview-content"><div class="loading"><span class="spinner"></span>Loading...</div></div>
+  </div>
+
+  <!-- USERS -->
+  <div id="section-users" class="section">
+    <div class="toolbar" style="flex-wrap:wrap;gap:8px">
+      <input class="search-input" id="user-search" placeholder="Search email, nickname, phone..." onkeydown="if(event.key==='Enter')loadUsers(1)">
+      <select id="user-sort" onchange="loadUsers(1)" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:6px;font-size:13px;cursor:pointer">
+        <option value="logins">Sort: Most logins</option>
+        <option value="recent">Sort: Most recent</option>
+        <option value="convs">Sort: Most conversations</option>
+        <option value="robots">Sort: Most robots</option>
+      </select>
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;color:var(--text)">
+        <input type="checkbox" id="filter-phone" onchange="loadUsers(1)"> Has phone
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;color:var(--text)">
+        <input type="checkbox" id="filter-robot" onchange="loadUsers(1)"> Has robot
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;color:var(--text)">
+        <input type="checkbox" id="filter-profile" onchange="loadUsers(1)"> Has profile
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;color:var(--text)">
+        <input type="checkbox" id="filter-convs" onchange="loadUsers(1)"> Has conversations
+      </label>
+      <button class="btn btn-primary" onclick="loadUsers(1)">Search</button>
+      <span id="user-count" style="color:var(--muted);font-size:12px"></span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Email</th>
+            <th>Name (Eilik)</th>
+            <th>Phone</th>
+            <th>Location</th>
+            <th>Age/Sex</th>
+            <th>Robots</th>
+            <th>Conversations</th>
+            <th>Profile</th>
+            <th>Logins</th>
+            <th>Source</th>
+          </tr>
+        </thead>
+        <tbody id="users-tbody">
+          <tr><td colspan="9" class="loading"><span class="spinner"></span>Loading users...</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pagination">
+      <button class="btn" id="user-prev" onclick="loadUsers(userPage-1)">← Prev</button>
+      <span id="user-page-info"></span>
+      <button class="btn" id="user-next" onclick="loadUsers(userPage+1)">Next →</button>
+    </div>
+  </div>
+
+  <!-- CONVERSATIONS -->
+  <div id="section-conversations" class="section">
+    <div class="toolbar">
+      <input class="search-input" id="conv-search" placeholder="Search message content..." onkeydown="if(event.key==='Enter')loadConversations(1)">
+      <input class="search-input" id="conv-ip" placeholder="Filter by IP..." style="width:160px" onkeydown="if(event.key==='Enter')loadConversations(1)">
+      <button class="btn btn-primary" onclick="loadConversations(1)">Search</button>
+      <span id="conv-count" style="color:var(--muted);font-size:12px"></span>
+    </div>
+    <div class="conv-list" id="conv-list">
+      <div class="loading"><span class="spinner"></span>Loading conversations...</div>
+    </div>
+    <div class="pagination">
+      <button class="btn" id="conv-prev" onclick="loadConversations(convPage-1)">← Prev</button>
+      <span id="conv-page-info"></span>
+      <button class="btn" id="conv-next" onclick="loadConversations(convPage+1)">Next →</button>
+    </div>
+  </div>
+
+  <!-- ROBOTS -->
+  <div id="section-robots" class="section">
+    <div class="toolbar">
+      <input class="search-input" id="robot-search" placeholder="Search robot name, MAC, owner email..." onkeydown="if(event.key==='Enter')loadRobots(1)">
+      <button class="btn btn-primary" onclick="loadRobots(1)">Search</button>
+      <span id="robot-count" style="color:var(--muted);font-size:12px"></span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Robot</th>
+            <th>MAC / BLE ID</th>
+            <th>Type</th>
+            <th>Owner</th>
+            <th>Conversations</th>
+            <th>Last Active</th>
+            <th>Location</th>
+          </tr>
+        </thead>
+        <tbody id="robots-tbody">
+          <tr><td colspan="7" class="loading"><span class="spinner"></span>Loading robots...</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pagination">
+      <button class="btn" id="robot-prev" onclick="loadRobots(robotPage-1)">← Prev</button>
+      <span id="robot-page-info"></span>
+      <button class="btn" id="robot-next" onclick="loadRobots(robotPage+1)">Next →</button>
+    </div>
+  </div>
+
+  <!-- GEOGRAPHIC -->
+  <div id="section-geographic" class="section">
+    <div id="geo-content"><div class="loading"><span class="spinner"></span>Loading...</div></div>
+  </div>
+
+</div>
+
+<!-- USER DETAIL MODAL -->
+<div class="modal-overlay" id="user-modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <img id="modal-avatar" class="avatar" src="" onerror="this.style.display='none'">
+      <div>
+        <div class="modal-title" id="modal-title">User Detail</div>
+        <div id="modal-subtitle" style="color:var(--muted);font-size:12px;margin-top:2px"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body">
+      <div class="loading"><span class="spinner"></span>Loading...</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ SERVER ADMIN SECTION ═══════════════════ -->
+<div id="section-server" class="section">
+  <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
+    <div class="stat-card" style="flex:1;min-width:200px;">
+      <div class="stat-num" id="srv-info-name">—</div>
+      <div class="stat-label">Server Hostname</div>
+      <div class="stat-sub" id="srv-info-kernel">—</div>
+    </div>
+    <div class="stat-card" style="flex:1;min-width:200px;">
+      <div class="stat-num" id="srv-info-uptime">—</div>
+      <div class="stat-label">Uptime / Load</div>
+    </div>
+    <div class="stat-card" style="flex:1;min-width:200px;">
+      <div class="stat-num" id="srv-info-disk">—</div>
+      <div class="stat-label">Disk Usage</div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+    <!-- File Manager -->
+    <div class="stat-card">
+      <h3 style="color:var(--red);margin-bottom:10px;font-size:15px;">📁 File Manager (SSH)</h3>
+      <div style="display:flex;gap:6px;margin-bottom:8px;">
+        <input id="fm-path" value="/" style="flex:1;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:4px;font-family:monospace;font-size:12px;">
+        <button onclick="loadFiles(document.getElementById('fm-path').value)" style="background:var(--red);border:none;color:white;padding:6px 12px;border-radius:4px;cursor:pointer;">Go</button>
+      </div>
+      <div id="fm-list" style="max-height:350px;overflow-y:auto;font-family:monospace;font-size:12px;">
+        <div style="color:var(--muted);padding:20px;">Click "Go" to browse</div>
+      </div>
+    </div>
+
+    <!-- Cron + Processes -->
+    <div>
+      <div class="stat-card" style="margin-bottom:12px;">
+        <h3 style="color:var(--orange);margin-bottom:10px;font-size:15px;">⏰ Cron Jobs</h3>
+        <div id="cron-list" style="font-family:monospace;font-size:12px;max-height:120px;overflow-y:auto;">
+          <div style="color:var(--muted)">Loading...</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <h3 style="color:var(--yellow);margin-bottom:10px;font-size:15px;">⚙️ Top Processes</h3>
+        <div id="proc-list" style="font-family:monospace;font-size:11px;max-height:150px;overflow-y:auto;">
+          <div style="color:var(--muted)">Loading...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ MYSQL SECTION ═══════════════════ -->
+<div id="section-mysql" class="section">
+  <div class="stat-card">
+    <h3 style="color:var(--red);margin-bottom:10px;font-size:15px;">🗄️ MySQL Browser (Production RDS)</h3>
+    <div style="display:flex;gap:6px;margin-bottom:8px;">
+      <select id="mysql-db" onchange="loadTables(this.value)" style="background:var(--bg);border:1px solid var(--border);color:var(--text);padding:6px;border-radius:4px;">
+        <option value="">-- Select DB --</option>
+        <option value="ai_config">ai_config</option>
+        <option value="chat_data">chat_data</option>
+        <option value="energize_user_data">energize_user_data</option>
+        <option value="factory_data">factory_data</option>
+        <option value="time_log">time_log</option>
+        <option value="weather_log">weather_log</option>
+        <option value="web_data">web_data</option>
+        <option value="xunrui_web_data">xunrui_web_data</option>
+      </select>
+      <input id="mysql-query" placeholder="SELECT * FROM ... LIMIT 20" style="flex:1;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:4px;font-family:monospace;font-size:12px;" onkeydown="if(event.key==='Enter')runQuery()">
+      <button onclick="runQuery()" style="background:var(--red);border:none;color:white;padding:6px 14px;border-radius:4px;cursor:pointer;">Run</button>
+    </div>
+    <div id="mysql-tables" style="margin-bottom:8px;font-size:11px;color:var(--muted);"></div>
+    <div id="mysql-results" style="max-height:500px;overflow:auto;">
+      <div style="color:var(--muted);padding:20px;">Select a database and run a query</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ DEVICE FACES SECTION ═══════════════════ -->
+<div id="section-faces" class="section">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+    <h3 style="color:var(--red);font-size:15px;">📷 Device Face Photos (OSS)</h3>
+    <button onclick="loadFaces(facesPage+1)" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:4px 10px;border-radius:4px;cursor:pointer;">Next →</button>
+  </div>
+  <div id="faces-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;">
+    <div style="color:var(--muted);padding:20px;grid-column:1/-1;">Loading...</div>
+  </div>
+</div>
+
+<!-- ═══════════════════ AUDIO SECTION ═══════════════════ -->
+<div id="section-audio" class="section">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:10px;">
+    <h3 style="color:var(--red);font-size:15px;">🎙️ Wake-up Audio Archives (OSS)</h3>
+    <div style="display:flex;gap:6px;">
+      <select id="audio-date" onchange="loadAudio(1,this.value)" style="background:var(--bg);border:1px solid var(--border);color:var(--text);padding:4px;border-radius:4px;font-size:12px;">
+        <option value="">All dates</option>
+      </select>
+      <button onclick="loadAudio(audioPage+1,document.getElementById('audio-date').value)" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:4px 10px;border-radius:4px;cursor:pointer;">Next →</button>
+    </div>
+  </div>
+  <div id="audio-list" style="max-height:600px;overflow-y:auto;">
+    <div style="color:var(--muted);padding:20px;">Loading...</div>
+  </div>
+</div>
+
+<script>
+let userPage = 1, convPage = 1, robotPage = 1;
+
+// ── Navigation ─────────────────────────────────────────────────────────────
+function showSection(name) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('section-' + name).classList.add('active');
+  event.target.classList.add('active');
+  if (name === 'users' && document.getElementById('users-tbody').innerHTML.includes('Loading')) loadUsers(1);
+  if (name === 'conversations' && document.getElementById('conv-list').innerHTML.includes('Loading')) loadConversations(1);
+  if (name === 'robots' && document.getElementById('robots-tbody').innerHTML.includes('Loading')) loadRobots(1);
+  if (name === 'geographic') loadGeographic();
+  if (name === 'server') loadServerInfo();
+  if (name === 'faces' && !window.facesLoaded) { loadFaces(1); window.facesLoaded = true; }
+  if (name === 'audio' && !window.audioLoaded) { loadAudioDates(); loadAudio(1); window.audioLoaded = true; }
+}
+
+// ═════════════════ SERVER ADMIN JS ═════════════════
+
+let facesPage = 1, audioPage = 1;
+
+async function loadServerInfo() {
+  // Server info
+  fetch('/api/server/info').then(r=>r.json()).then(d => {
+    const lines = (d.info || '').split('\n');
+    if (lines[0]) document.getElementById('srv-info-name').textContent = lines[0];
+    if (lines[1]) document.getElementById('srv-info-kernel').textContent = 'Kernel: ' + lines[1];
+    if (lines[2]) document.getElementById('srv-info-uptime').textContent = lines[2].split(',')[0].replace('up ','');
+    const diskLine = lines.find(l => l.includes('%'));
+    if (diskLine) document.getElementById('srv-info-disk').textContent = diskLine.trim().split(/\s+/)[4] || '—';
+  }).catch(()=>{});
+  // Files
+  loadFiles('/');
+  // Cron
+  fetch('/api/server/cron').then(r=>r.json()).then(d => {
+    const el = document.getElementById('cron-list');
+    if (d.jobs && d.jobs.length) {
+      el.innerHTML = d.jobs.map(j => `<div style="padding:4px 0;border-bottom:1px solid var(--border);"><span style="color:var(--orange)">${j.schedule}</span> <span style="color:var(--muted)">${j.command.substring(0,60)}</span></div>`).join('');
+    } else el.innerHTML = '<div style="color:var(--muted)">No cron jobs found</div>';
+  }).catch(()=>{ document.getElementById('cron-list').innerHTML = '<div style="color:var(--red)">Error loading cron</div>'; });
+  // Processes
+  fetch('/api/server/processes').then(r=>r.json()).then(d => {
+    const el = document.getElementById('proc-list');
+    if (d.processes) {
+      el.innerHTML = d.processes.map(p => `<div style="padding:2px 0;display:flex;gap:8px;"><span style="color:var(--yellow);width:50px">${p.mem}%</span><span style="color:var(--muted);width:60px">${p.user}</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.command}</span></div>`).join('');
+    }
+  }).catch(()=>{});
+}
+
+async function loadFiles(path) {
+  document.getElementById('fm-path').value = path;
+  const el = document.getElementById('fm-list');
+  el.innerHTML = '<div style="color:var(--muted);padding:10px;">Loading...</div>';
+  try {
+    const r = await fetch('/api/server/files?path=' + encodeURIComponent(path));
+    const d = await r.json();
+    if (d.error) { el.innerHTML = `<div style="color:var(--red)">${d.error}</div>`; return; }
+    if (!d.entries || !d.entries.length) { el.innerHTML = '<div style="color:var(--muted)">Empty directory</div>'; return; }
+    el.innerHTML = d.entries.map(e => {
+      const icon = e.is_dir ? '📁' : _fileIcon(e.name);
+      const size = e.is_dir ? '' : _fmtBytes(e.size);
+      const click = e.is_dir ? `onclick="loadFiles('${e.path.replace(/'/g,"\\'")}')" style="cursor:pointer"` : '';
+      const color = e.is_dir ? 'var(--text)' : 'var(--muted)';
+      return `<div ${click} style="padding:3px 6px;display:flex;gap:8px;border-bottom:1px solid rgba(48,54,61,0.3);" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">
+        <span>${icon}</span><span style="flex:1;color:${color}">${e.name}</span><span style="color:var(--muted);font-size:11px;">${size}</span><span style="color:var(--muted);font-size:11px;width:60px;">${e.perms}</span>
+      </div>`;
+    }).join('');
+  } catch(e) { el.innerHTML = `<div style="color:var(--red)">Error: ${e}</div>`; }
+}
+
+function _fileIcon(name) {
+  if (name.endsWith('.env') || name.endsWith('.key') || name.endsWith('.pem')) return '🔑';
+  if (name.endsWith('.php')) return '🐘';
+  if (name.endsWith('.py')) return '🐍';
+  if (name.endsWith('.js')) return '📜';
+  if (name.endsWith('.json')) return '📋';
+  if (name.endsWith('.zip') || name.endsWith('.gz') || name.endsWith('.tar')) return '📦';
+  if (name.endsWith('.jpg') || name.endsWith('.png') || name.endsWith('.svg')) return '🖼️';
+  if (name.endsWith('.apk')) return '🤖';
+  return '📄';
+}
+
+function _fmtBytes(b) {
+  if (!b) return '';
+  if (b < 1024) return b + 'B';
+  if (b < 1048576) return (b/1024).toFixed(1) + 'KB';
+  return (b/1048576).toFixed(1) + 'MB';
+}
+
+// ── MySQL Browser ───────────────────────────────────────────
+async function loadTables(db) {
+  if (!db) return;
+  const r = await fetch('/api/server/mysql/tables/' + db);
+  const d = await r.json();
+  const el = document.getElementById('mysql-tables');
+  if (d.rows) {
+    const tables = d.rows.map(row => Object.values(row)[0]);
+    el.innerHTML = `<span style="color:var(--muted)">Tables (${tables.length}):</span> ` + tables.map(t => `<span style="display:inline-block;background:var(--bg3);padding:1px 6px;border-radius:3px;margin:2px;cursor:pointer;font-size:11px;" onclick="document.getElementById('mysql-query').value='SELECT * FROM ${db}.${t} LIMIT 20';runQuery()">${t}</span>`).join('');
+  }
+}
+
+async function runQuery() {
+  const sql = document.getElementById('mysql-query').value;
+  if (!sql) return;
+  const el = document.getElementById('mysql-results');
+  el.innerHTML = '<div style="color:var(--muted);padding:20px;">Running query...</div>';
+  try {
+    const r = await fetch('/api/server/mysql?q=' + encodeURIComponent(sql));
+    const d = await r.json();
+    if (d.error) { el.innerHTML = `<div style="color:var(--red);padding:10px;">❌ ${d.error}</div>`; return; }
+    if (!d.rows || !d.rows.length) { el.innerHTML = '<div style="color:var(--muted);padding:10px;">No results</div>'; return; }
+    let html = `<div style="color:var(--muted);margin-bottom:6px;font-size:11px;">${d.count} rows from ${d.database || 'default'} DB</div>`;
+    html += '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12px;">';
+    html += '<tr>' + d.columns.map(c => `<th style="background:var(--bg3);padding:6px 8px;text-align:left;border:1px solid var(--border);color:var(--red);font-size:11px;position:sticky;top:0;">${c}</th>`).join('') + '</tr>';
+    d.rows.forEach(row => {
+      html += '<tr>' + d.columns.map(c => {
+        let v = row[c];
+        if (v === null) v = '<span style="color:var(--muted)">NULL</span>';
+        else if (typeof v === 'object') v = JSON.stringify(v);
+        else v = String(v);
+        if (v.length > 100) v = v.substring(0, 100) + '...';
+        return `<td style="padding:4px 8px;border:1px solid var(--border);font-family:monospace;font-size:11px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${v}</td>`;
+      }).join('') + '</tr>';
+    });
+    html += '</table></div>';
+    el.innerHTML = html;
+  } catch(e) { el.innerHTML = `<div style="color:var(--red)">Error: ${e}</div>`; }
+}
+
+// ── Device Faces ──────────────────────────────────────────────
+async function loadFaces(page) {
+  facesPage = page;
+  const el = document.getElementById('faces-grid');
+  el.innerHTML = '<div style="color:var(--muted);padding:20px;grid-column:1/-1;">Loading faces...</div>';
+  try {
+    const r = await fetch('/api/oss/faces?page=' + page);
+    const d = await r.json();
+    if (!d.items || !d.items.length) { el.innerHTML = '<div style="color:var(--muted);grid-column:1/-1;">No faces found</div>'; return; }
+    el.innerHTML = d.items.map(item => `
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;overflow:hidden;">
+        <a href="${item.url}" target="_blank" style="display:block;text-decoration:none;">
+          <img src="${item.url}" style="width:100%;height:120px;object-fit:cover;" onerror="this.parentElement.innerHTML='<div style=height:120px;display:flex;align-items:center;justify-content:center;color:var(--muted)>Failed</div>'">
+        </a>
+        <div style="padding:4px 6px;font-size:10px;color:var(--muted);">
+          <div>${item.date}</div>
+          <div>${item.size_fmt}</div>
+        </div>
+      </div>
+    `).join('');
+  } catch(e) { el.innerHTML = `<div style="color:var(--red);grid-column:1/-1;">Error: ${e}</div>`; }
+}
+
+// ── Audio Archives ─────────────────────────────────────────────
+async function loadAudioDates() {
+  try {
+    const r = await fetch('/api/oss/audio/dates');
+    const d = await r.json();
+    const sel = document.getElementById('audio-date');
+    if (d.dates) {
+      d.dates.slice().reverse().forEach(date => {
+        const opt = document.createElement('option');
+        opt.value = date; opt.textContent = date;
+        sel.appendChild(opt);
+      });
+    }
+  } catch(e) {}
+}
+
+async function loadAudio(page, date) {
+  audioPage = page;
+  const el = document.getElementById('audio-list');
+  el.innerHTML = '<div style="color:var(--muted);padding:20px;">Loading audio...</div>';
+  try {
+    let url = '/api/oss/audio?page=' + page;
+    if (date) url += '&date=' + date;
+    const r = await fetch(url);
+    const d = await r.json();
+    if (!d.items || !d.items.length) { el.innerHTML = '<div style="color:var(--muted)">No audio found</div>'; return; }
+    el.innerHTML = d.items.map(item => `
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid var(--border);background:var(--bg2);border-radius:4px;margin-bottom:4px;">
+        <span style="font-size:20px;">🎙️</span>
+        <div style="flex:1;">
+          <div style="font-family:monospace;font-size:12px;color:var(--text);">${item.filename}</div>
+          <div style="font-size:10px;color:var(--muted);">CPU: ${item.cpu_id} | ${item.date} | ${item.size_fmt}</div>
+        </div>
+        <a href="${item.url}" target="_blank" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:4px 8px;border-radius:4px;text-decoration:none;font-size:11px;">Download</a>
+      </div>
+    `).join('');
+  } catch(e) { el.innerHTML = `<div style="color:var(--red)">Error: ${e}</div>`; }
+}
+
+// ── Stats ──────────────────────────────────────────────────────────────────
+async function loadStats() {
+  const r = await fetch('/api/stats');
+  const d = await r.json();
+  const u = d.users || {}, cv = d.conversations || {}, dv = d.devices || {},
+        m = d.memories || {}, wl = d.weather_logs || {}, ll = d.login_logs || {};
+  const sync = d.sync || {};
+
+  document.getElementById('stats-bar').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-num">${fmt(u.n||0)}</div>
+      <div class="stat-label">Users in DB</div>
+      <div class="stat-sub">${fmt(u.emails||0)} emails · ${fmt(u.phones||0)} phones</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">${fmt(dv.n||0)}</div>
+      <div class="stat-label">Robots in DB</div>
+      <div class="stat-sub">${dv.types||0} product types</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">${fmt(cv.n||0)}</div>
+      <div class="stat-label">Conversations</div>
+      <div class="stat-sub">${fmt(cv.unique_robots||0)} robots · ${fmt(cv.unique_ips||0)} IPs</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">${fmt(m.n||0)}</div>
+      <div class="stat-label">Psych Profiles</div>
+      <div class="stat-sub">${fmt(m.with_address||0)} w/ address · ${fmt(m.with_age||0)} w/ age</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">${fmt(wl.n||0)}</div>
+      <div class="stat-label">Location Records</div>
+      <div class="stat-sub">${fmt(wl.cities||0)} cities · ${fmt(wl.robots||0)} robots</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">${fmt(ll.n||0)}</div>
+      <div class="stat-label">Login Logs</div>
+      <div class="stat-sub">${fmt(ll.emails||0)} emails · ${fmt(ll.ips||0)} IPs</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" style="color:var(--orange)">$196K</div>
+      <div class="stat-label">AI Costs Exposed</div>
+      <div class="stat-sub">TTS $182K · ASR $7K · LLM $6K</div>
+    </div>
+  `;
+
+  const lastSync = sync.last_sync?.value;
+  document.getElementById('sync-badge').textContent = lastSync ? `Last sync: ${lastSync.slice(0,16)}` : 'Not synced';
+  loadOverview(d);
+}
+
+function loadOverview(d) {
+  const u = d.users||{}, cv = d.conversations||{}, m = d.memories||{};
+  document.getElementById('overview-content').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px">
+      <div class="stat-card">
+        <div style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--red)">⚠ What Was Exposed (No Auth)</div>
+        <ul style="list-style:none;display:flex;flex-direction:column;gap:8px">
+          <li>✓ <strong>${fmt(u.n||0)}</strong> user accounts — email, nickname, phone, avatar</li>
+          <li>✓ <strong>47,571</strong> robots — BLE MAC addresses (physical tracking)</li>
+          <li>✓ <strong>5,074,829</strong> private voice conversations</li>
+          <li>✓ <strong>${fmt(m.n||0)}</strong> psychological profiles (family, age, hobbies, location)</li>
+          <li>✓ <strong>100,054</strong> geographic location records (city per robot)</li>
+          <li>✓ <strong>68,115</strong> login logs (email → IP history)</li>
+          <li>✓ <strong>2 PostgreSQL</strong> database hostnames</li>
+          <li>✓ <strong>19 internal employee</strong> email addresses</li>
+          <li>✓ <strong>$196,164 USD</strong> in AI costs (free abuse)</li>
+        </ul>
+      </div>
+      <div class="stat-card">
+        <div style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--red)">⚠ Attack Chains Proven</div>
+        <ul style="list-style:none;display:flex;flex-direction:column;gap:8px">
+          <li>✓ <strong>Full ATO</strong> — register free account → OTP → access all 47K users</li>
+          <li>✓ <strong>PII mass harvest</strong> — 213 emails + 15 phones (no auth at all)</li>
+          <li>✓ <strong>AI cost abuse</strong> — unauthenticated DashScope inference</li>
+          <li>✓ <strong>Voice cloning</strong> — generate Eilik TTS audio (no auth)</li>
+          <li>✓ <strong>Program deletion</strong> — DELETE /api/program/58 (no auth)</li>
+          <li>✓ <strong>OSS upload</strong> — arbitrary file to CDN (no auth)</li>
+          <li>✓ <strong>Login DoS</strong> — HTTP 500 on all 47K accounts</li>
+          <li>✓ <strong>User→Robot→Conversation→Profile</strong> linkable chain</li>
+        </ul>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--muted)">Data Sources</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;font-size:12px;color:var(--muted)">
+        <div>/api/user/list — 47,120 users</div>
+        <div>/api/device/list — 47,571 robots</div>
+        <div>/api/user-device/list — 47,586 pairs</div>
+        <div>/api/chat-data/list — 5.4M conversations</div>
+        <div>/api/chat-memory/list — 23,111 profiles</div>
+        <div>/api/weather-log/list — 100K geo records</div>
+        <div>/api/time-log/list — 52K sync records</div>
+        <div>/api/user-login-info/list — 68K logins</div>
+      </div>
+    </div>
+  `;
+}
+
+// ── Users ──────────────────────────────────────────────────────────────────
+async function loadUsers(page) {
+  userPage = page;
+  const q          = document.getElementById('user-search').value;
+  const sort       = document.getElementById('user-sort').value;
+  const hasPhone   = document.getElementById('filter-phone').checked ? '1' : '';
+  const hasRobot   = document.getElementById('filter-robot').checked ? '1' : '';
+  const hasProfile = document.getElementById('filter-profile').checked ? '1' : '';
+  const hasConvs   = document.getElementById('filter-convs').checked ? '1' : '';
+  const params = new URLSearchParams({page, per_page: 50, q, sort});
+  if (hasPhone)   params.set('has_phone', '1');
+  if (hasRobot)   params.set('has_robot', '1');
+  if (hasProfile) params.set('has_profile', '1');
+  if (hasConvs)   params.set('has_convs', '1');
+  const r = await fetch(`/api/users?${params}`);
+  const d = await r.json();
+  document.getElementById('user-count').textContent = `${fmt(d.total)} users`;
+  document.getElementById('user-page-info').textContent = `Page ${page} of ${Math.ceil(d.total/50)}`;
+  document.getElementById('user-prev').disabled = page <= 1;
+  document.getElementById('user-next').disabled = page >= Math.ceil(d.total/50);
+
+  const tbody = document.getElementById('users-tbody');
+  if (!d.users?.length) { tbody.innerHTML = '<tr><td colspan="9"><div class="empty"><div class="empty-icon">👤</div>No users found</div></td></tr>'; return; }
+
+  tbody.innerHTML = d.users.map(u => `
+    <tr onclick="openUser(${u.id})">
+      <td>
+        ${u.avatar_url ? `<img class="avatar" src="${u.avatar_url}" onerror="this.outerHTML='<div class=\\"avatar-placeholder\\">👤</div>'">` : '<div class="avatar-placeholder">👤</div>'}
+        <span style="margin-left:8px;color:var(--muted);font-size:11px">#${u.id}</span>
+      </td>
+      <td>
+        <span style="color:#58a6ff">${esc(u.email||'—')}</span>
+        ${u.nickname && u.nickname !== u.email && u.nickname !== (u.email||'').split('@')[0] ? `<div style="font-size:11px;color:var(--muted)">@${esc(u.nickname)}</div>` : ''}
+        ${u.realname ? `<div style="font-size:11px;color:var(--muted)">${esc(u.realname)}</div>` : ''}
+      </td>
+      <td>${u.profile_name ? `<span style="color:#e3b341">${esc(u.profile_name)}</span>` : '<span style="color:var(--muted)">—</span>'}</td>
+      <td>${u.phone ? `<span class="badge-orange">${esc(u.phone)}</span>` : '<span style="color:var(--muted)">—</span>'}</td>
+      <td style="font-size:12px">${
+        (() => {
+          const flag = u.last_country_code ? String.fromCodePoint(...[...u.last_country_code.toUpperCase()].map(c=>0x1F1E0-65+c.charCodeAt(0))) : '';
+          const loc = [flag, u.last_country || u.last_city].filter(Boolean).join(' ');
+          const sub = u.last_city && u.last_country ? `<div style="font-size:10px;color:var(--muted)">${esc(u.last_city)}</div>` : '';
+          return loc ? loc + sub : '<span style="color:var(--muted)">—</span>';
+        })()
+      }</td>
+      <td style="font-size:12px">${[u.profile_age, u.profile_sex].filter(Boolean).join(' · ') || '<span style="color:var(--muted)">—</span>'}</td>
+      <td>${u.robot_count > 0 ? `<span class="badge-blue">🤖 ${u.robot_count}</span>` : '<span style="color:var(--muted)">—</span>'}</td>
+      <td>${u.conv_count > 0 ? `<span class="badge-green">💬 ${fmt(u.conv_count)}</span>` : '<span style="color:var(--muted)">0</span>'}</td>
+      <td>
+        ${u.profile_address ? `<span class="badge-red">📍 ${esc(u.profile_address.slice(0,30))}</span>` : ''}
+        ${u.profile_character ? `<div style="font-size:11px;color:var(--muted)">${esc(u.profile_character.slice(0,35))}</div>` : ''}
+      </td>
+      <td><span class="badge-gray">🔑 ${fmt(u.login_num||0)}</span></td>
+    </tr>
+  `).join('');
+}
+
+// ── User Detail Modal ──────────────────────────────────────────────────────
+async function openUser(uid) {
+  document.getElementById('user-modal').classList.add('open');
+  document.getElementById('modal-title').textContent = 'Loading...';
+  document.getElementById('modal-subtitle').textContent = '';
+  document.getElementById('modal-body').innerHTML = '<div class="loading"><span class="spinner"></span>Loading user data...</div>';
+
+  const r = await fetch(`/api/users/${uid}`);
+  const d = await r.json();
+  const u = d.user || {};
+
+  document.getElementById('modal-title').textContent = u.email || u.nickname || `User #${uid}`;
+  document.getElementById('modal-subtitle').textContent = `ID: ${uid} · Registered: ${(u.create_time||'').slice(0,10)} · Logins: ${u.login_num||0}`;
+  if (u.avatar_url) {
+    const img = document.getElementById('modal-avatar');
+    img.src = u.avatar_url; img.style.display = '';
+  }
+
+  // Build all robots' psychological profiles
+  const memories = d.robots?.filter(r => r.profile && Object.keys(r.profile).some(k => r.profile[k] && r.profile[k]!=='None'));
+
+  document.getElementById('modal-body').innerHTML = `
+
+    <!-- User Info -->
+    <div class="modal-section">
+      <h3>👤 User Profile</h3>
+      <div class="profile-grid">
+        ${field('Email', u.email)} ${field('Nickname', u.nickname)} ${field('Real Name', u.realname)}
+        ${field('Phone', u.phone)} ${field('User Source', u.user_source)} ${field('Login Count', u.login_num)}
+        ${field('Registered', (u.create_time||'').slice(0,10))} ${field('Last Update', (u.update_time||'').slice(0,10))}
+      </div>
+    </div>
+
+    <!-- Robots -->
+    ${d.robots?.length ? `
+    <div class="modal-section">
+      <h3>🤖 Robots (${d.robots.length})</h3>
+      <div class="robot-cards">
+        ${d.robots.map(r => `
+          <div class="robot-card">
+            <div class="robot-name">${esc(r.device_origin_name||r.device_mac_id||'Unknown Robot')}</div>
+            <div class="robot-detail">MAC: <span>${esc(r.device_mac_id||'—')}</span></div>
+            <div class="robot-detail">Type: <span>${r.device_type==='QL'?'Eilik/Eiliko':'AI Station'} (${r.device_type})</span></div>
+            ${r.cpu_id ? `<div class="robot-detail">CPU ID: <span style="font-size:10px;font-family:monospace">${r.cpu_id}</span></div>` : ''}
+            <div class="robot-detail">Conversations: <span>${fmt(r.conv_count||0)}</span></div>
+            <div class="robot-detail">Last Active: <span>${(r.last_used||'Never').slice(0,16)}</span></div>
+            ${r.last_city ? `<div class="robot-detail">📍 City: <span>${esc(r.last_city)}</span> (IP: ${esc(r.last_ip||'')})</div>` : ''}
+          </div>
+        `).join('')}
+      </div>
+    </div>` : ''}
+
+    <!-- Psychological Profile -->
+    ${d.robots?.some(r => r.profile_name || r.address || r.character || r.age || r.profession || r.family_relations || r.friends) ? `
+    <div class="modal-section">
+      <h3>🧠 Psychological Profile (built by Eilik from conversations)</h3>
+      ${d.robots.filter(r => r.profile_name || r.address || r.character || r.age || r.profession || r.family_relations || r.friends || r.pet || r.food_preference || r.music_preference || r.movie_preferences || r.parental_information).map(r => `
+        <div style="margin-bottom:16px;padding:12px;background:var(--bg3);border-radius:8px">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:10px">Robot: <b>${esc(r.device_origin_name||r.device_mac_id||'?')}</b>${r.last_city ? ` · 🌍 ${esc(r.last_city)}` : ''}</div>
+          <div class="profile-grid">
+            ${r.profile_name ? field('Known as', r.profile_name) : ''}
+            ${r.age ? field('Age', r.age) : ''}
+            ${r.sex ? field('Sex', r.sex) : ''}
+            ${r.birthday ? field('Birthday', r.birthday) : ''}
+            ${r.constellation ? field('Star sign', r.constellation) : ''}
+            ${r.address ? field('Address', r.address) : ''}
+            ${r.profession ? field('Profession', r.profession) : ''}
+            ${r.character ? field('Character', r.character) : ''}
+            ${r.family_relations ? field('Family', r.family_relations) : ''}
+            ${r.friends ? field('Friends', r.friends) : ''}
+            ${r.pet ? field('Pet', r.pet) : ''}
+            ${r.food_preference ? field('Food', r.food_preference) : ''}
+            ${r.game_preferences ? field('Games', r.game_preferences) : ''}
+            ${r.music_preference ? field('Music', r.music_preference) : ''}
+            ${r.movie_preferences ? field('Movies', r.movie_preferences) : ''}
+            ${r.parental_information ? field('Parents', r.parental_information) : ''}
+          </div>
+        </div>
+      `).join('')}
+    </div>` : ''}
+
+    <!-- Recent Conversations -->
+    ${d.conversations?.length ? `
+    <div class="modal-section">
+      <h3>💬 Conversations (${d.conversations.length} most recent)</h3>
+      <div class="conv-list">
+        ${d.conversations.slice(0,30).map(c => `
+          <div class="conv-item">
+            <div class="conv-meta">
+              <span>🕒 ${(c.chat_time||'').slice(0,16)}</span>
+              <span>📡 ${esc(c.public_ip||'')}</span>
+              <span>🤖 ${esc(c.robot_name||c.sn?.slice(0,12)||'')}</span>
+              ${c.total_token ? `<span>🪙 ${c.total_token} tokens</span>` : ''}
+            </div>
+            <div class="conv-q">👤 ${esc(c.question||'')}</div>
+            <div class="conv-a">🤖 ${esc((c.answer||'').slice(0,200))}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>` : ''}
+
+    <!-- Login History -->
+    ${d.logins?.length ? `
+    <div class="modal-section">
+      <h3>🔑 Login History (${d.logins.length} sessions)</h3>
+      <div class="table-wrap" style="max-height:200px;overflow-y:auto">
+        <table>
+          <thead><tr><th>IP</th><th>Type</th><th>Source</th><th>Time</th></tr></thead>
+          <tbody>
+            ${d.logins.map(l => `
+              <tr>
+                <td style="font-family:monospace;font-size:12px">${esc(l.ip||'')}</td>
+                <td><span class="badge-gray">${esc(l.login_type||'')}</span></td>
+                <td>${esc(l.user_source||'')}</td>
+                <td style="font-size:11px;color:var(--muted)">${(l.create_time||'').slice(0,16)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>` : ''}
+
+    <!-- Geographic -->
+    ${d.geographic?.length ? `
+    <div class="modal-section">
+      <h3>📍 Geographic History</h3>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        ${[...new Set(d.geographic.map(g => g.city).filter(Boolean))].map(city =>
+          `<span class="badge-red">📍 ${esc(city)}</span>`
+        ).join('')}
+      </div>
+    </div>` : ''}
+  `;
+}
+
+function openRobotRow(i) {
+  const r = (window._robots||[])[i];
+  if (!r) return;
+  if (r.owner_id) { openUser(r.owner_id); return; }
+  // Pas d'owner_id : afficher les infos robot directement
+  document.getElementById('user-modal').classList.add('open');
+  document.getElementById('modal-avatar').style.display = 'none';
+  document.getElementById('modal-title').textContent = r.device_origin_name || r.device_mac_id || 'Robot';
+  document.getElementById('modal-subtitle').textContent = `${r.device_mac_id} · Type: ${r.device_type==='QL'?'Eilik/Eiliko':'AI Station'} · No linked user`;
+  document.getElementById('modal-body').innerHTML = `
+    <div class="modal-section">
+      <h3>🤖 Robot Info</h3>
+      <div class="profile-grid">
+        ${field('Name', r.device_origin_name)} ${field('MAC', r.device_mac_id)}
+        ${field('Type', r.device_type==='QL'?'Eilik/Eiliko':'AI Station')}
+        ${field('CPU ID', r.cpu_id)} ${field('Conversations', fmt(r.conv_count||0))}
+        ${field('Last Active', (r.last_used||'').slice(0,16))} ${field('City', r.last_city)}
+      </div>
+    </div>`;
+}
+
+function openConvRow(i) {
+  const c = (window._convs||[])[i];
+  if (!c) return;
+  if (c.owner_id) { openUser(c.owner_id); return; }
+  // Pas d'owner_id : afficher le détail de la conversation
+  document.getElementById('user-modal').classList.add('open');
+  document.getElementById('modal-avatar').style.display = 'none';
+  document.getElementById('modal-title').textContent = c.robot_name || c.sn?.slice(0,16) || 'Conversation';
+  document.getElementById('modal-subtitle').textContent = `${(c.chat_time||'').slice(0,16)} · IP: ${c.public_ip||'—'} · No linked user`;
+  document.getElementById('modal-body').innerHTML = `
+    <div class="modal-section">
+      <h3>💬 Conversation Detail</h3>
+      <div class="profile-grid">
+        ${field('Robot', c.robot_name)} ${field('IP', c.public_ip)}
+        ${field('Time', (c.chat_time||'').slice(0,16))} ${field('Tokens', c.total_token)}
+        ${field('Owner email', c.owner||'—')}
+      </div>
+      <div style="margin-top:16px">
+        <div class="conv-q" style="margin-bottom:8px">👤 ${esc(c.question||'')}</div>
+        <div class="conv-a">🤖 ${esc(c.answer||'')}</div>
+      </div>
+    </div>`;
+}
+
+function closeModal() { document.getElementById('user-modal').classList.remove('open'); }
+function field(label, value) {
+  if (!value && value !== 0) return '';
+  return `<div class="profile-item"><div class="profile-key">${esc(label)}</div><div class="profile-val">${esc(String(value))}</div></div>`;
+}
+
+// ── Conversations ──────────────────────────────────────────────────────────
+async function loadConversations(page) {
+  convPage = page;
+  const q  = document.getElementById('conv-search').value;
+  const ip = document.getElementById('conv-ip').value;
+  const r  = await fetch(`/api/conversations?page=${page}&per_page=30&q=${encodeURIComponent(q)}&ip=${encodeURIComponent(ip)}`);
+  const d  = await r.json();
+  document.getElementById('conv-count').textContent = `${fmt(d.total)} conversations`;
+  document.getElementById('conv-page-info').textContent = `Page ${page} of ${Math.ceil(d.total/30)}`;
+  document.getElementById('conv-prev').disabled = page <= 1;
+  document.getElementById('conv-next').disabled = page >= Math.ceil(d.total/30);
+
+  const list = document.getElementById('conv-list');
+  if (!d.conversations?.length) { list.innerHTML = '<div class="empty"><div class="empty-icon">💬</div>No conversations found</div>'; return; }
+  window._convs = d.conversations;
+  list.innerHTML = d.conversations.map((c, i) => `
+    <div class="conv-item" onclick="openConvRow(${i})" style="cursor:pointer">
+      <div class="conv-meta">
+        <span>🕒 ${(c.chat_time||'').slice(0,16)}</span>
+        <span>📡 ${esc(c.public_ip||'')}</span>
+        <span>🤖 ${esc(c.robot_name||c.sn?.slice(0,16)||'')}</span>
+        ${c.owner ? `<span style="color:#58a6ff">👤 ${esc(c.owner)}</span>` : ''}
+        ${c.total_token ? `<span>🪙 ${c.total_token} tokens</span>` : ''}
+      </div>
+      <div class="conv-q">👤 ${esc(c.question||'(no transcript)')}</div>
+      <div class="conv-a">🤖 ${esc((c.answer||'').slice(0,300))}</div>
+    </div>
+  `).join('');
+}
+
+// ── Robots ─────────────────────────────────────────────────────────────────
+async function loadRobots(page) {
+  robotPage = page;
+  const q = document.getElementById('robot-search').value;
+  const r = await fetch(`/api/robots?page=${page}&per_page=50&q=${encodeURIComponent(q)}`);
+  const d = await r.json();
+  document.getElementById('robot-count').textContent = `${fmt(d.total)} robots`;
+  document.getElementById('robot-page-info').textContent = `Page ${page} of ${Math.ceil(d.total/50)}`;
+  document.getElementById('robot-prev').disabled = page <= 1;
+  document.getElementById('robot-next').disabled = page >= Math.ceil(d.total/50);
+
+  const tbody = document.getElementById('robots-tbody');
+  if (!d.robots?.length) { tbody.innerHTML = '<tr><td colspan="7"><div class="empty">No robots found</div></td></tr>'; return; }
+  window._robots = d.robots;
+  tbody.innerHTML = d.robots.map((r, i) => `
+    <tr onclick="openRobotRow(${i})" style="cursor:pointer">
+      <td>
+        <div style="font-weight:600">${esc(r.device_origin_name||'—')}</div>
+        ${r.cpu_id ? `<div style="font-size:10px;color:var(--muted);font-family:monospace">${r.cpu_id.slice(0,20)}...</div>` : ''}
+      </td>
+      <td style="font-family:monospace;font-size:12px">${esc(r.device_mac_id||'—')}</td>
+      <td><span class="${r.device_type==='QL'?'badge-blue':'badge-orange'}">${r.device_type==='QL'?'Eilik/Eiliko':'AI Station'}</span></td>
+      <td>
+        ${r.owner_avatar ? `<img class="avatar" src="${r.owner_avatar}" onerror="this.style.display='none'" style="margin-right:6px">` : ''}
+        <span style="color:#58a6ff">${esc(r.owner||'—')}</span>
+        ${r.owner_nickname ? `<div style="font-size:11px;color:var(--muted)">${esc(r.owner_nickname)}</div>` : ''}
+      </td>
+      <td>${r.conv_count > 0 ? `<span class="badge-green">💬 ${fmt(r.conv_count)}</span>` : '<span style="color:var(--muted)">0</span>'}</td>
+      <td style="font-size:12px;color:var(--muted)">${(r.last_used||'—').slice(0,16)}</td>
+      <td>${r.last_city ? `<span class="badge-red">📍 ${esc(r.last_city)}</span>` : '<span style="color:var(--muted)">—</span>'}</td>
+    </tr>
+  `).join('');
+}
+
+// ── Geographic ─────────────────────────────────────────────────────────────
+async function loadGeographic() {
+  const el = document.getElementById('geo-content');
+  if (!el.innerHTML.includes('Loading')) return;
+  const r = await fetch('/api/geographic');
+  const d = await r.json();
+  const flagOf = code => code
+    ? String.fromCodePoint(...[...code.toUpperCase()].map(ch => 0x1F1E0 - 65 + ch.charCodeAt(0)))
+    : '';
+  el.innerHTML = `
+    <!-- KPI PAYS -->
+    <div style="margin-bottom:20px">
+      <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:10px">
+        <span style="font-weight:600">KPI by Country</span>
+        <span style="font-size:11px;color:var(--muted)">${fmt((d.countries||[]).reduce((s,c)=>s+c.devices,0))} robots with known location</span>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        ${(d.countries||[]).filter(c=>c.country&&c.country!=='Unknown').slice(0,30).map(c => `
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 14px;min-width:140px;display:flex;flex-direction:column;gap:2px">
+            <div style="font-size:18px">${flagOf(c.country_code)} <span style="font-size:13px;font-weight:600">${esc(c.country)}</span></div>
+            <div style="font-size:20px;font-weight:700;color:var(--accent)">${fmt(c.devices)} <span style="font-size:11px;color:var(--muted);font-weight:400">robots</span></div>
+            <div style="font-size:11px;color:var(--muted)">${c.pct}% of located</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+    <!-- GRILLE VILLES + TIMELINE -->
+    <div class="geo-grid">
+      <div>
+        <div style="font-weight:600;margin-bottom:12px">Cities with Active Eilik Robots</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>City</th><th>Country</th><th>Robots</th><th>Queries</th><th>Last Seen</th></tr></thead>
+            <tbody>
+              ${(d.cities||[]).map(c => `
+                <tr>
+                  <td><span class="badge-red">📍 ${esc(c.city || '—')}</span></td>
+                  <td>${flagOf(c.country_code)} ${esc(c.country || '—')}</td>
+                  <td><span class="badge-blue">🤖 ${c.devices}</span></td>
+                  <td>${fmt(c.queries)}</td>
+                  <td style="font-size:11px;color:var(--muted)">${(c.last_seen||'').slice(0,10)}</td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div>
+        <div style="font-weight:600;margin-bottom:12px">Daily Active Robots (Last 30 days)</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Date</th><th>Active Robots</th></tr></thead>
+            <tbody>
+              ${(d.timeline||[]).map(t => `
+                <tr>
+                  <td>${(t.dt||'').toString().slice(0,10)}</td>
+                  <td><span class="badge-green">🤖 ${t.devices}</span></td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ── Utils ──────────────────────────────────────────────────────────────────
+function esc(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function fmt(n) { return Number(n).toLocaleString(); }
+
+// ── Init ───────────────────────────────────────────────────────────────────
+loadStats();
+loadUsers(1);
+</script>
+</body>
+</html>

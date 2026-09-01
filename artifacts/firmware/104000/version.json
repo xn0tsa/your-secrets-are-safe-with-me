@@ -1,0 +1,25 @@
+{
+    "version": "v2.1_20260617182218_release",
+    "info": {
+        "sh.zip": "bb1768b1261971240e231c25365cd73a",
+        "cfg.zip": "3634edbb1adacdce601784d11de9768b",
+        "bin.zip": "6246be8971902c0befc4cc988cd57aea",
+        "lib.zip": "2f34d7cbaefb1bfec39b6549918fce62",
+        "main.zip": "9d2c9fbb3f9f736b63bbee6efaebc95a",
+        "chat.zip": "2f5484ed7e402c9457c907c98127c0bf",
+        "divination.zip": "3fc2d3a4332e9201e699f53f0fc7cae0",
+        "instruction.zip": "7d1221b796810757c0187297533de3c3",
+        "story.zip": "89f223a582644351ea2530137b40d006",
+        "res.zip": "6ce88713aaf0e7a82902c14c0f61f6df",
+        "asrmodel.zip": "d28ef1a26c87dbb5b5663d17e36557b4",
+        "detectmodel.zip": "f639e25483383219db15d81cec6f66de",
+        "kwsmodel.zip": "554d73348f6e11151ba3415435643ce7",
+        "ttsmodel.zip": "4170c83e41852ab443966fa30e65cef8",
+        "vadmodel.zip": "3051d3cdad4c87ce111f7956fbd00007",
+        "EL.zip": "9a040b684d2bccece7cf35fa39ec2684",
+        "MC.zip": "cb90d878fd56784bf9dabd2c6f265c04",
+        "PX.zip": "0b6b0da101fe548528d2e910c193d42d",
+        "web.zip": "a39d5a370b6c8b11ae57b7bfea69bb68",
+        "firmware.zip": "5a9ee590d5d68623f948b7c86e78b5aa"
+    }
+}

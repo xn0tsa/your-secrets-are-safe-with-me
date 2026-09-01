@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: eilik_db
+    environment:
+      POSTGRES_DB: eilik_poc
+      POSTGRES_USER: eilik
+      POSTGRES_PASSWORD: eilik_audit_2026
+    volumes:
+      - ./schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U eilik -d eilik_poc"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    container_name: eilik_dashboard
+    ports:
+      - "8082:8080"
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://eilik:eilik_audit_2026@postgres:5432/eilik_poc
+      EILIK_ADMIN: "http://45.32.81.33:9090"
+      EILIK_AUTH: "http://auth.energizelab.com.cn:9080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - .:/app
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

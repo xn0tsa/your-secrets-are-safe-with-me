@@ -1,0 +1,53 @@
+#!/bin/sh
+function send_to_rpmsg()
+{
+	RPMSG_PORC_MSG_TYPE_LOADER_TIMER_STOP=5
+
+	# 填充结构体字段
+	buf_content=""
+	buf_length=${#buf_content}
+	type_value=$RPMSG_PORC_MSG_TYPE_LOADER_TIMER_STOP
+
+	# 确保缓冲区不超过64字节
+	if [ $buf_length -gt 64 ]; then
+		echo "Buffer content too long"
+		exit 1
+	fi
+
+	# 创建临时文件存放二进制数据
+	temp_file=$(mktemp)
+
+	# 写入缓冲区内容（64字节）
+	printf "%s" "$buf_content" > "$temp_file"
+	# 填充剩余空间为0
+	dd if=/dev/zero bs=1 count=$((64 - buf_length)) >> "$temp_file" 2>/dev/null
+
+	# 写入length字段（4字节小端序）
+	printf "%08x" $buf_length | \
+		sed -e 's/\(..\)\(..\)\(..\)\(..\)/\4\3\2\1/' | \
+		xxd -r -p >> "$temp_file"
+
+	# 写入type字段（4字节小端序）
+	printf "%08x" $type_value | \
+		sed -e 's/\(..\)\(..\)\(..\)\(..\)/\4\3\2\1/' | \
+		xxd -r -p >> "$temp_file"
+
+	dd if="$temp_file" of=/dev/rpmsg0 bs=72 count=1
+
+	rm -Rf "$temp_file"
+}
+
+case "$1" in
+	start)
+		loader_timer=$(printf "$(fw_printenv loader_timer > /dev/null 2>&1 && fw_printenv loader_timer | cut -d'=' -f2 | tr -d '\n')")
+		if [ "$loader_timer" == "enable" ];then
+			sleep 2
+			send_to_rpmsg
+			fw_setenv loader_timer "disable"
+		fi
+		;;
+	*)
+		echo "Usage: [start|stop|restart]" >&2
+		exit 3
+		;;
+esac
