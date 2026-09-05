@@ -145,3 +145,17 @@ fake `memory` client, and inject events into the bus.
 Both PG RDS instances named in `t_ai_server_db_host` no longer resolve publicly
 (NXDOMAIN from outside and from the server itself): deleted or moved to private
 networking — the routing table is partially stale. Minor good news.
+
+
+---
+
+<a id="EK-64"></a>
+## EK-64 · HIGH · Feishu (Lark) workspace opened by the vault secrets — the fleet's prompt-design Bitable read in full
+
+`tenant_access_token` issued live with the vault's `FEISHU_APP_ID/APP_SECRET`
+([EK-26](#EK-26) chain). The Bitable named in the same `.env` is **“提示词汇总”
+(prompt master sheet)**: 355 records of production prompts per product/language,
+plus intent-recognition and skill-description tables. The back office syncs this
+sheet into production (`sync-feishu-configs` appears in the operation logs) — it is
+the design cockpit for every robot's persona. Read-only enumeration demonstrated;
+write scopes not probed.
