@@ -361,3 +361,17 @@ verification, three layers:
 
 Same "distribute unsigned content to robots" pattern as the firmware channel
 ([EK-32..37](03-firmware.md)), now user-generated.
+
+
+---
+
+<a id="EK-73"></a>
+## EK-73 · HIGH · Unauthenticated Aliyun CDN cache purge (`createAliRefreshTask` on :9080)
+
+`POST /api/cdn/createAliRefreshTask` with an **empty body** returns
+`刷新任务创建失败: InvalidParameters` — the request was **relayed to the Aliyun CDN API
+with the server's runtime credentials**; the only gate is parameter validation, not
+authentication. Anyone can purge the production CDN (the firmware and content
+channel): cache-poisoning assistance (purge, then serve freshly uploaded content
+via [EK-70](#EK-70)) and economic DoS (mass billable purges). Not executed beyond
+the empty-body probe. Escalates P30 (the :9090 variant needed the forged JWT).
