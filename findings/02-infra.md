@@ -159,3 +159,21 @@ plus intent-recognition and skill-description tables. The back office syncs this
 sheet into production (`sync-feishu-configs` appears in the operation logs) — it is
 the design cockpit for every robot's persona. Read-only enumeration demonstrated;
 write scopes not probed.
+
+
+---
+
+<a id="EK-65"></a>
+## EK-65 · HIGH · A parallel account farm: ~250 throwaway accounts, every 2 hours, since Aug 15, still active Sep 3
+
+`t_user` × login correlation on the mail.tm domain (auditor identities excluded
+— our single JWT-refresh account is identified and isolated):
+- ~250 `eilik[random]@emalupe.com` accounts created **in steady 2-hour waves,
+  24/7, from Aug 15 to Sep 3 18:40**, each with an immediate automated OTP login
+  (216 logins), from a **datacenter IP (194.88.99.176, 56 logins)** and Brazilian
+  CGNAT ranges. Not human, not us.
+- Combined with [EK-60](#EK-60): **at least three non-operator parties operate
+  simultaneously** on the production platform (this audit, the still-live
+  super_admin actor, the account farm). The 65,273-user business metric shown in
+  the vendor's own dashboard is polluted by ~250 bots.
+- Root enabler: code-based signup with no captcha, no rate limit (MEDIUM noted).
