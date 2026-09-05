@@ -84,3 +84,39 @@ $re = exec("python3.10 panxer.py " . json_encode(json_decode(bzdecompress(file_g
 **Retest 2026-09-01**: ❌ OPEN: super-admin hash read (read-only) still matches `md5(md5("123456")+salt)`, confirmed offline with zero login attempts.
 
 **Fix**: mandatory MFA on the back office, SMTP rotation, unique passwords.
+
+
+---
+
+<a id="EK-60"></a>
+## EK-60 · CRITICAL · A concurrent unknown party holds a self-provisioned, still-live super_admin account
+
+Timeline (Beijing time), from role/user/login/operate tables (read-only correlation):
+
+| When | Event | IP |
+|---|---|---|
+| Aug 28, 23:35 | `sckame0522@minitts.net` created + logs in (throwaway domain) | 89.37.63.52 |
+| Aug 29, 03:28 | `dkuckh8598@minitts.net` created (user_source "unknown") | 89.37.63.52 |
+| Aug 29, 03:47 | `update_by: dkuckh8598` on the **AI-server routing table** (`t_ai_server_db_host`, foreign row) | — |
+| Aug 29, 04:47 | **role id 11 `securitytest` created with `role_key = super_admin`** | — |
+| Aug 29, 05:59 | `/api/device-version/update` "sec probe" (mode 999999, `http://x/999.zip`) by `b4test…@emalupe.com` and `dkuckh8598` in the same second | 146.70.189.242 |
+| Sep 4, 21:30 | `r2probe9201@minitts.net` created — **the actor is still creating accounts** | — |
+
+Both IPs are consumer-VPN exits. The role and account remain `state=1`: a third
+party's admin persistence is **live as of this report**. Attribution is
+indeterminable (second unauthorized researcher vs. an internal security test
+kicked off Aug 29) — but either way, it experimentally validates the escalation
+chain documented here (leaked JWT secret → role creation → persistence,
+[EK-10](01-cloud-api.md#EK-10)) and means production carried **at least two
+non-operator admin parties simultaneously** during this audit. Our own identities
+are distinct and listed (one mail.tm refresh account, the auditor's own accounts).
+
+<a id="EK-61"></a>
+## EK-61 · HIGH · The AI-server routing table is a fleet-interception primitive
+
+`t_server_list` (which clients consult to reach the AI servers) and
+`t_ai_server_db_host` (internal PostgreSQL RDS hosts — previously unmapped
+infrastructure) are writable by any forged-JWT holder. **Changing the server IP
+redirects the entire fleet's voice conversations** to an arbitrary server, over
+cleartext HTTP. Not tested (global impact). The third party's Aug 29 modification
+of the "foreign" row proves non-operators write this table in practice.
