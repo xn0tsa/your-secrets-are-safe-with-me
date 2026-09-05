@@ -338,3 +338,26 @@ company's official bot post in their internal collaboration space: internal
 phishing with a trusted identity (fake "maintenance" notice, "secret rotation"
 lure). Combined with [EK-64](02-infra.md#EK-64) (workplace read), their Feishu is
 now readable **and** scriptable from outside.
+
+
+---
+
+<a id="EK-72"></a>
+## EK-72 · HIGH · Community program store: moderation is a client-side flag, rejects stay downloadable, content unsigned
+
+The community store distributes executable content (servo choreography + audio,
+files `a`/`e`/`w` inside user-uploaded zips) to other families' robots. Read-only
+verification, three layers:
+1. **Mass assignment**: `CreateProgramDto` exposes `is_internal` ("1: approve
+   directly") as a client-supplied property; `create()` sets `approve_status=1`
+   with no check that the author is staff. Anyone (frictionless signup, [EK-18](#EK-18))
+   publishes instantly, skipping the queue — which is telling: production holds 233
+   approved and 16 rejected programs, **zero pending**.
+2. **Rejected ≠ removed**: the CDN still serves the file_url of rejected programs
+   (200, verified on two, incl. a politically-titled one) — the vendor's own
+   moderation log proves children-facing rejections, yet files stay downloadable.
+3. **No integrity**: zips carry no signature of any kind; the API gates
+   (`program/listall`, `detail/{id}`) answer without authentication.
+
+Same "distribute unsigned content to robots" pattern as the firmware channel
+([EK-32..37](03-firmware.md)), now user-generated.
