@@ -20,7 +20,7 @@
 | Robots that have ever conversed with the cloud | **55,457** |
 | Distinct home IP addresses on the Eiliko line alone | **103,956** |
 | Robots produced (all product lines) | **~171,000** (149,486 Eiliko alone) |
-| User accounts (emails, phones, no auth needed to read) | **65,273** — of which ~250 are a third party's bot farm ([EK-65](findings/02-infra.md#EK-65)) |
+| User accounts (emails, phones, no auth needed to read) | **65,273** |
 | Child profiles extracted by the nightly pipeline | **31,450** (24 fields each, incl. home address and parental info) |
 | Wake-word audio archives on a public CDN | **3,994 archives** of household voices (counted 2026-09-05) |
 | Family face photos on a public CDN | **419** (2026-09-05; plus 1,950+ avatars in the HK bucket alone) |
@@ -212,7 +212,7 @@ Underneath all three sits a product that promises secrecy to children.
 
 ```
 ├── README.md              # This document
-├── findings/              # The 67 findings, by domain (each file opens with its ID map)
+├── findings/              # The 65 findings (1 retracted), by domain (each file opens with its ID map)
 │   ├── 01-cloud-api.md    # EK-01..24 + EK-58/59, APIs, AI backend, CDN, LLM keyring
 │   ├── 02-infra.md        # EK-25..29, 49-50, 60-61: servers, compromise, concurrent admin actor, fleet routing
 │   ├── 03-firmware.md     # EK-32..37, OTA supply chain, hardcoded keys, device protocols

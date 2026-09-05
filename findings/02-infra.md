@@ -164,16 +164,17 @@ write scopes not probed.
 ---
 
 <a id="EK-65"></a>
-## EK-65 · HIGH · A parallel account farm: ~250 throwaway accounts, every 2 hours, since Aug 15, still active Sep 3
+## EK-65 · RETRACTED (erratum 2026-09-05) · The "third-party account farm" was the audit's own tooling
 
-`t_user` × login correlation on the mail.tm domain (auditor identities excluded
-— our single JWT-refresh account is identified and isolated):
-- ~250 `eilik[random]@emalupe.com` accounts created **in steady 2-hour waves,
-  24/7, from Aug 15 to Sep 3 18:40**, each with an immediate automated OTP login
-  (216 logins), from a **datacenter IP (194.88.99.176, 56 logins)** and Brazilian
-  CGNAT ranges. Not human, not us.
-- Combined with [EK-60](#EK-60): **at least three non-operator parties operate
-  simultaneously** on the production platform (this audit, the still-live
-  super_admin actor, the account farm). The 65,273-user business metric shown in
-  the vendor's own dashboard is polluted by ~250 bots.
-- Root enabler: code-based signup with no captcha, no rate limit (MEDIUM noted).
+**This finding is withdrawn.** The ~250 `eilik*@emalupe.com` accounts were created by
+the auditor's own automation, not a third party:
+- the Aug 15-24 waves (2-hour cadence, `187.40.x` CGNAT — the auditor's own login
+  range) are the audit's `fast_sync` JWT refresher: every token expiry creates one
+  throwaway mail.tm account (2 h = `ACCESS_TOKEN_EXPIRATION`). Confirmed by the
+  refresh account's own login record;
+- the Sep 2-3 waves (`194.88.99.176`) and the Sep 1 `EilikAudit-Retest/2026-09`
+  user-agent hit come from an **auditor-team VPS** running the same harness.
+
+The remaining third-party actor is the minitts/uberip "r2" party ([EK-60](#EK-60)),
+which is unaffected by this correction. The frictionless-signup observation stands
+but is already covered as [EK-18](01-cloud-api.md#EK-18) — no duplicate counted.
