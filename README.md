@@ -26,7 +26,7 @@
 | Family face photos on a public CDN | **419** (2026-09-05; plus 1,950+ avatars in the HK bucket alone) |
 | Admin accounts protected by the password `123456` | **5**, including the super-admin |
 | Secrets rotated as of the Sept 1 retest | **0** |
-| Months the production server has been owned by a third party | **6+** (webshells) — plus a **second, still-live unknown super_admin account** since Aug 29 ([EK-60](findings/02-infra.md#EK-60)) |
+| Months the production server has been owned by a third party | **6+** (webshells) — plus a **second, still-live unknown super_admin account** since Aug 29, whose SSRF campaign targets the cloud metadata service ([EK-60](findings/02-infra.md#EK-60)) |
 | Robots whose beliefs and behavior can be rewritten by anyone (public Redis key, no auth) | **the entire conversing fleet** |
 | Remote code execution on the AI inference server (pickle history in the public Redis) | **confirmed deserialization of attacker bytes** ([EK-57](findings/05-behavior.md#EK-57), payload not executed) |
 | Jurisdiction where US/EU households' wake-word audio and family face photos are stored | **mainland China (Beijing bucket) + a US mirror** ([EK-56](findings/06-privacy.md#EK-56)) |

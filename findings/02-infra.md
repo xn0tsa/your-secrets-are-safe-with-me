@@ -111,6 +111,16 @@ chain documented here (leaked JWT secret → role creation → persistence,
 non-operator admin parties simultaneously** during this audit. Our own identities
 are distinct and listed (one mail.tm refresh account, the auditor's own accounts).
 
+**Addendum (2026-09-05, EK-60-bis · CRITICAL)**: the contents of
+`t_ai_server_db_host` are themselves an attack journal — ~30 probe rows left by the
+same actor map a systematic SSRF campaign through the DB-config-driven endpoints:
+Alibaba metadata credentials (`169.254.169.254/latest/meta-data/ram/security-credentials/`
++ nip.io DNS-rebind variants), 8 PATHPROBE rows against AWS IPs (injection-point
+mapping), webhook.site/httpbin/httpbun/postman-echo capture targets, and egress-IP
+discovery (ipify/ifconfig/icanhazip). The iteration proves the config-driven SSRF
+gadget **works** (nobody iterates 30 times on a broken injection). Whether they
+harvested RAM credentials is unknown from the DB alone.
+
 <a id="EK-61"></a>
 ## EK-61 · HIGH · The AI-server routing table is a fleet-interception primitive
 
@@ -120,6 +130,10 @@ infrastructure) are writable by any forged-JWT holder. **Changing the server IP
 redirects the entire fleet's voice conversations** to an arbitrary server, over
 cleartext HTTP. Not tested (global impact). The third party's Aug 29 modification
 of the "foreign" row proves non-operators write this table in practice.
+
+**Addendum (2026-09-05)**: external port probe — the domestic AI server
+(8.129.236.211) also exposes **9091** (the WebSocket control bus, [EK-62](#EK-62))
+and 9090 to the internet; all three instances expose 8080 (unidentified service).
 
 
 ---
