@@ -311,3 +311,26 @@ performed), but the documented combination: switching the served model to one of
 dead `test` entries (`test999`, `test_security_probe_del`, `x` — present in the table)
 is a **global conversational DoS**; switching to gpt-4.1 changes the model that talks
 to children and diverts billing to the Azure key — no authentication, no log.
+
+
+---
+
+<a id="EK-70"></a>
+## EK-70 · CRITICAL · `/api/oss/signature-url` on :9080 requires NO authentication at all
+
+`GET /api/oss/signature-url?key=<anything>` — no Bearer, no sign — returns 1-hour
+pre-signed URLs (minted with the vault AK) for **both buckets**. Verified end to end:
+a real `wake_up/` key → CN-bucket link → **204 KB of a stranger's voice archive
+downloaded**. This defeats any future "make the CDN private" remediation, and
+provides a key-existence oracle (200/404) across both buckets. Escalates P30/EK-30
+(the :9090 variant needed the forged JWT — this one is zero-credential).
+
+<a id="EK-71"></a>
+## EK-71 · HIGH · `testSendFeishuMsg` unauthenticated — the vendor's own bot can be made to speak inside their internal workspace
+
+`POST /api/system/other/testSendFeishuMsg` with an **empty body** → 201, Feishu API
+relayed `success` — the message was submitted. Anyone on the internet can make the
+company's official bot post in their internal collaboration space: internal
+phishing with a trusted identity (fake "maintenance" notice, "secret rotation"
+lure). Combined with [EK-64](02-infra.md#EK-64) (workplace read), their Feishu is
+now readable **and** scriptable from outside.
