@@ -28,6 +28,7 @@
 | Secrets rotated as of the Sept 1 retest | **0** |
 | Months the production server has been owned by a third party | **6+** |
 | Robots whose beliefs and behavior can be rewritten by anyone (public Redis key, no auth) | **the entire conversing fleet** |
+| Jurisdiction where US/EU households' wake-word audio and family face photos are stored | **mainland China (Beijing bucket) + a US mirror** ([EK-56](findings/06-privacy.md#EK-56)) |
 
 ---
 
@@ -215,7 +216,7 @@ Underneath all three sits a product that promises secrecy to children.
 │   ├── 02-infra.md        # EK-25..29, 49, 50, servers, databases, third-party compromise
 │   ├── 03-firmware.md     # EK-32..37, OTA supply chain, hardcoded keys, device protocols
 │   ├── 04-clients.md      # EK-38..44, Android app + Windows desktop apps
-│   └── 06-privacy.md      # EK-45..48, child profiling, glass back office, GDPR/COPPA
+│   └── 06-privacy.md      # EK-45..48 + EK-56, profiling, back office, Beijing-bucket routing, GDPR/COPPA
 ├── poc/
 │   ├── retest.py          # Full retest harness (49 checks, non-destructive)
 │   ├── RETEST.md          # September 1 results (48 OPEN / 1 PARTIAL)

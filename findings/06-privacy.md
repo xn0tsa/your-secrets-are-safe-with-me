@@ -1,4 +1,4 @@
-# Findings: Privacy & compliance (EK-45 → EK-48)
+# Findings: Privacy & compliance (EK-45 → EK-48, EK-56)
 
 Analyzed corpus (census 2026-09-01): 8,301,976 stored conversations across 55,457 robots (all product lines), 103,956 distinct home IPs on the Eiliko line alone. Mostly children, because that is who a companion robot marketed to kids talks to. Entity: Shenzhen Zhuneng Technology Co., Ltd (Shenzhen): data hosted in Beijing/HK (GDPR Art. 46 transfers with no identified safeguards).
 
@@ -66,6 +66,41 @@ Meanwhile, every word was transcribed and stored in cleartext in a Beijing RDS, 
 
 ---
 
-## Cross-border transfers (noted under EK-01/02)
+## Cross-border transfers (previously noted under EK-01/02)
 
-Audio from global users → Beijing ASR (`nls-gateway-cn-beijing-internal.aliyuncs.com`), OSS Beijing/HK: no SCCs/TIA identified: a GDPR Art. 46 assessment is required.
+Audio from global users → Beijing ASR (`nls-gateway-cn-beijing-internal.aliyuncs.com`); OSS Beijing/HK; no SCCs/TIA identified: a GDPR Art. 46 assessment is required. EK-56 (below) sharpens the storage half of that statement.
+
+---
+
+<a id="EK-56"></a>
+## EK-56 · HIGH · All biometric collections land in the Beijing bucket, including US/EU households
+
+Determined 2026-09-05 by listing both OSS buckets directly (Aliyun keys from the leaked vault, [EK-26](02-infra.md#EK-26)):
+
+| Bucket | `wake_up/` (voice) | `device_face/` (family faces) | `user_avatar/` |
+|---|---|---|---|
+| `energize-cn` — **oss-cn-beijing** | the entire collection | the bulk of it | (regional CN users) |
+| `energize-hk` — oss-cn-hongkong | **0 objects** | 9 | 1,950 (international users) |
+| mirror on the US file server | full copy | full copy | — |
+
+- The international API server (`45.32.81.33`) that serves US/EU devices runs with
+  `SERVER_AREA=domestic` and pushes its uploads (container logs: `OSS multipart` →
+  `wake_up/...` keys) to the **Beijing** bucket. Avatars are the one type routed
+  correctly per region (`avatar_bucket:"hk"` in the audit payloads) — the routing
+  exists and was not applied to the biometric types.
+- Net effect for a European or American household: the wake-word recordings of the
+  home and the family's face photos are stored in **mainland-China jurisdiction**
+  and mirrored on a US box — two extra jurisdictions, neither of them the one the
+  product's international servers imply — on top of the Beijing RDS holding the
+  transcripts ([EK-25](02-infra.md#EK-25)).
+- Fleet refinement (census 2026-09-05): the `wake_up` corpus is produced exclusively
+  by the legacy Eilik line (3,871/3,872 device folders are 16-hex legacy ids; the
+  current Eiliko product does not upload wake-word trainings — verified on my own
+  device: training completed, nothing uploaded anywhere). The collection switch
+  remains globally ON with a `video` type in reserve
+  ([audio-collect-info](02-infra.md#EK-27)).
+
+**Qualification**: GDPR Art. 44-49 (transfer to a third country without safeguards —
+the wake-word and face data are the Art. 9-adjacent categories of [EK-23](01-cloud-api.md#EK-23));
+PIPL art. 38-40 for the inverse flow. The routing is fixable in one line, which makes
+six months of US/EU voice recordings in `energize-cn` a documented choice by inertia.
