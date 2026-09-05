@@ -26,7 +26,7 @@
 | Family face photos on a public CDN | **419** (2026-09-05; plus 1,950+ avatars in the HK bucket alone) |
 | Admin accounts protected by the password `123456` | **5**, including the super-admin |
 | Secrets rotated as of the Sept 1 retest | **0** |
-| Credentials needed to mint pre-signed OSS URLs for any file, both buckets | **0** ([EK-70](findings/01-cloud-api.md#EK-70)) |
+| Credentials needed to mint pre-signed OSS URLs for any file, both buckets — **still works after full secret rotation** | **0** ([EK-70](findings/01-cloud-api.md#EK-70)) |
 | Credentials needed to make the vendor's own bot post inside their Feishu | **0** ([EK-71](findings/01-cloud-api.md#EK-71)) |
 | Months the production server has been owned by a third party | **6+** (webshells) — plus a **second, still-live unknown super_admin account** since Aug 29, whose SSRF campaign targets the cloud metadata service ([EK-60](findings/02-infra.md#EK-60)) |
 | Robots whose beliefs and behavior can be rewritten by anyone (public Redis key, no auth) | **the entire conversing fleet** |

@@ -316,14 +316,18 @@ to children and diverts billing to the Azure key — no authentication, no log.
 ---
 
 <a id="EK-70"></a>
-## EK-70 · CRITICAL · `/api/oss/signature-url` on :9080 requires NO authentication at all
+## EK-70 · HIGH · `/api/oss/signature-url` on :9080 requires NO authentication — and survives secret rotation
+
+*Reclassified from CRITICAL: it grants no capability beyond the vault AK ([EK-26](02-infra.md#EK-26)) or the public CDN ([EK-23](#EK-23)) for an attacker who already has either. Its significance is strategic:*
 
 `GET /api/oss/signature-url?key=<anything>` — no Bearer, no sign — returns 1-hour
 pre-signed URLs (minted with the vault AK) for **both buckets**. Verified end to end:
 a real `wake_up/` key → CN-bucket link → **204 KB of a stranger's voice archive
 downloaded**. This defeats any future "make the CDN private" remediation, and
-provides a key-existence oracle (200/404) across both buckets. Escalates P30/EK-30
-(the :9090 variant needed the forged JWT — this one is zero-credential).
+provides a key-existence oracle (200/404) across both buckets. And unlike every other OSS vector, it depends on **no leaked secret at all**:
+when the vendor finally rotates the vault, this endpoint keeps signing with its
+runtime credentials — the remediation analysis must account for it, and an
+attacker who never obtained the vault still gets arbitrary-key signed GETs.
 
 <a id="EK-71"></a>
 ## EK-71 · HIGH · `testSendFeishuMsg` unauthenticated — the vendor's own bot can be made to speak inside their internal workspace
