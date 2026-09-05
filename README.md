@@ -212,8 +212,8 @@ Underneath all three sits a product that promises secrecy to children.
 
 ```
 ├── README.md              # This document
-├── findings/              # The 58 findings, by domain (each file opens with its ID map)
-│   ├── 01-cloud-api.md    # EK-01..24, APIs, AI backend, CDN
+├── findings/              # The 60 findings, by domain (each file opens with its ID map)
+│   ├── 01-cloud-api.md    # EK-01..24 + EK-58/59, APIs, AI backend, CDN, LLM keyring
 │   ├── 02-infra.md        # EK-25..29, 49, 50, servers, databases, third-party compromise
 │   ├── 03-firmware.md     # EK-32..37, OTA supply chain, hardcoded keys, device protocols
 │   ├── 04-clients.md      # EK-38..44, Android app + Windows desktop apps

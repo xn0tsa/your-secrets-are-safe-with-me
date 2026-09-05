@@ -282,3 +282,32 @@ Without authentication: `wake_up/` (3,300 archives, 630 MB of household voices, 
 
 **Retest 2026-09-01**: ❌ OPEN.
 **Fix**: admin authentication middleware on `/api/system/*`, `/api/chat-data/*`, `/api/*-log/*`.
+
+
+---
+
+<a id="EK-58"></a>
+## EK-58 · CRITICAL (chain) · Full LLM keyring in the admin DB, including a live Azure OpenAI key absent from the vault
+
+`t_model_list` (read via the forged admin JWT, [EK-10](#EK-10)) serves every LLM credential in cleartext:
+
+| platform | models | key | verified |
+|---|---|---|---|
+| Ali DashScope | qwen-plus (production), qwen3.5-flash, deepseek-r1, qwen-vl-plus… | `sk-816c…4fdbc` | **200** on /models (read-only listing, zero tokens spent) |
+| "mircosoft" (Azure OpenAI) | gpt-4.1, gpt-5-chat, GPT-4o-mini, gpt-4.1-mini | 84-char token → `elchat.openai.azure.com` | **200** on /models |
+
+- The **Azure OpenAI key appears in no leaked `.env`** — an additional secret surface,
+  last updated Dec 2025, never rotated, attached to a billed Azure resource.
+- The runtime DashScope key on the AI server differs from the table's key: at least
+  two live DashScope keysets exist (rotation is structurally incomplete).
+- `model-use-info` adds the Alibaba NLS ASR app key and the cosyvoice TTS binding.
+
+<a id="EK-59"></a>
+## EK-59 · HIGH · Unauthenticated `/model/set?id=N` — a fleet-wide model switch
+
+`GET /model/set?id=N` sits next to `/model/get` on the authless AI server. Semantics
+not fully mapped (mapping it requires a production mutation, deliberately not
+performed), but the documented combination: switching the served model to one of the
+dead `test` entries (`test999`, `test_security_probe_del`, `x` — present in the table)
+is a **global conversational DoS**; switching to gpt-4.1 changes the model that talks
+to children and diverts billing to the Azure key — no authentication, no log.
