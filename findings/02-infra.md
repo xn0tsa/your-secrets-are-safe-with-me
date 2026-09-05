@@ -223,3 +223,34 @@ determined without the vendor's ActionTrail** — disclosure should ask the vend
 to filter Aug 28 - Sep 5 for (a) API events under the ECS instance roles, (b) the
 actor's IPs, (c) any metadata-adjacent calls. Credential theft: possible, not
 demonstrated.
+
+
+---
+
+<a id="EK-68"></a>
+## EK-68 · CRITICAL · The Redis host is a full machine-takeover primitive (CONFIG SET + MODULE LOAD + ROLE + publickey SSH)
+
+The Redis instance is a dedicated Aliyun ECS (123.57.147.163 — never referenced
+anywhere else; 311 days of uptime: the entire fleet's personalities on a box that
+has not been restarted in 10 months). With the vault password, all dangerous
+command families are live (read-only enumeration only — nothing executed):
+
+- `CONFIG GET` works → `CONFIG SET` enabled: `dir`+`dbfilename`+`SAVE` = arbitrary
+  file write on the host;
+- `MODULE LIST` works (timeseries loaded) → `MODULE LOAD` available: arbitrary .so
+  = direct RCE;
+- `ROLE: master` → SLAVEOF replication exfil/RCE variant open;
+- SSH (port 22) accepts **publickey** auth first → the authorized_keys write chain
+  is open.
+
+Upgrades EK-26 from "data access" to **complete host compromise, trivially**.
+
+<a id="EK-69"></a>
+## EK-69 · MEDIUM · Auth server :9080 full spec (135 endpoints) — device routing config, phone login flow, Feishu message sender
+
+Full spec extracted (`/docs/swagger-ui-init.js`). Notables: `GET /api/system/url/device`
+(returns the robots' routing config with the forged sign — a second fleet-routing
+table served by API), `loginByPhone`/`requestPhoneCode` (unaudited phone flow),
+`generalSign`, `testSendFeishuMsg` (send messages into the company's own Feishu via
+their bot), `device-session`. Bonus: `/api/device-auth-fail-info` answers with **no
+authentication at all** (raw NestJS default response).
