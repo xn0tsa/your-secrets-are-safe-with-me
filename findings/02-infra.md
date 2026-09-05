@@ -120,3 +120,28 @@ infrastructure) are writable by any forged-JWT holder. **Changing the server IP
 redirects the entire fleet's voice conversations** to an arbitrary server, over
 cleartext HTTP. Not tested (global impact). The third party's Aug 29 modification
 of the "foreign" row proves non-operators write this table in practice.
+
+
+---
+
+<a id="EK-62"></a>
+## EK-62 · HIGH · Undocumented WebSocket :9091 — the profiling pipeline's control bus, gated only by the forgeable sign
+
+The middleware container runs a WebSocket server on **:9091** (bound to `::`, i.e.
+exposed). Authentication is **only** the SignGuard arithmetic check (same forgery as
+[EK-07](01-cloud-api.md#EK-07)) — no JWT. Verified: handshake accepted (101) with the
+forged sign; connection closed without sending anything.
+
+From `websocket.gateway.js`: typed messages coordinate the memory/profiling pipeline
+(`register_identity` — including a privileged `memory` identity that drives the
+collection status, `update_frequency`, `collect_status`), and **any message of an
+unknown type is broadcast verbatim to every connected client** (operators, memory
+jobs, robots). A connected attacker can listen to coordination traffic, register a
+fake `memory` client, and inject events into the bus.
+
+<a id="EK-63"></a>
+## EK-63 · INFO · The routing table's internal PostgreSQL hosts are gone
+
+Both PG RDS instances named in `t_ai_server_db_host` no longer resolve publicly
+(NXDOMAIN from outside and from the server itself): deleted or moved to private
+networking — the routing table is partially stale. Minor good news.
