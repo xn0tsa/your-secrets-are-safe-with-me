@@ -28,6 +28,7 @@
 | Secrets rotated as of the Sept 1 retest | **0** |
 | Months the production server has been owned by a third party | **6+** |
 | Robots whose beliefs and behavior can be rewritten by anyone (public Redis key, no auth) | **the entire conversing fleet** |
+| Remote code execution on the AI inference server (pickle history in the public Redis) | **confirmed deserialization of attacker bytes** ([EK-57](findings/05-behavior.md#EK-57), payload not executed) |
 | Jurisdiction where US/EU households' wake-word audio and family face photos are stored | **mainland China (Beijing bucket) + a US mirror** ([EK-56](findings/06-privacy.md#EK-56)) |
 
 ---
@@ -211,7 +212,7 @@ Underneath all three sits a product that promises secrecy to children.
 
 ```
 ├── README.md              # This document
-├── findings/              # The 57 findings, by domain (each file opens with its ID map)
+├── findings/              # The 58 findings, by domain (each file opens with its ID map)
 │   ├── 01-cloud-api.md    # EK-01..24, APIs, AI backend, CDN
 │   ├── 02-infra.md        # EK-25..29, 49, 50, servers, databases, third-party compromise
 │   ├── 03-firmware.md     # EK-32..37, OTA supply chain, hardcoded keys, device protocols

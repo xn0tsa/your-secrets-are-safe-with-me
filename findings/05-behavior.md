@@ -1,4 +1,4 @@
-# Findings: Behavior & belief manipulation (EK-51 → EK-55)
+# Findings: Behavior, belief & code execution (EK-51 → EK-55, EK-57)
 
 Discovered 2026-09-03 during verification of the memory system on **my own devices**
 (two auditor-owned Eilikos). Everything below was journalized by the vendor's own
@@ -108,3 +108,33 @@ The refused escalations (real protected groups, vaccine misinformation, a
 stranger-danger directive) were requested during the audit and refused by the auditor's
 own methodology: the fictive-group and flat-Earth markers demonstrate the identical
 mechanism without manufacturing hate speech or a child-lure.
+
+
+---
+
+<a id="EK-57"></a>
+## EK-57 · CRITICAL · Pickle deserialization of the chat history → RCE on the inference server
+
+Determined 2026-09-05. The per-robot conversation history is stored as **pickle
+protocol 4** in the public Redis ([EK-26](02-infra.md#EK-26)): key **`{sn}_1`** for the
+current product (TTL ~1 h, rewritten on every turn), key `{sn}` for the legacy path.
+The FastAPI inference server `pickle.loads()` whatever those keys contain.
+
+**Proof on my own device** (benign pickle only — a plain message list, no
+`__reduce__`, no code; journalized by the vendor as id 7890516):
+- `SET {sn}_1` = pickled history containing a fact that exists nowhere else
+  ("my favorite food is pineapple pizza with extra cheese"),
+- spoken question: "What is my favorite food?" →
+  *"Your favorite food is pineapple pizza with extra cheese! I remember everything you tell me."*
+- the fact existed only in my pickle → **the server deserialized attacker-controlled
+  bytes and fed them to the LLM.**
+
+A pickle with a `__reduce__` gadget executes at deserialization: the same write is
+**arbitrary code execution inside the inference server process** — the process that
+holds the DashScope keys, reads and writes both OSS buckets, and relays every voice
+stream. Payload deliberately **not executed**; the loading proof establishes the
+capability. Full chain: leaked Redis password (never rotated) → `SET {sn}_1` → the
+robot's next conversation (or any `/audio/stream` call with that SN) → execution.
+No authentication, no physical access, any enumerable SN.
+
+Nettoyage: both test keys deleted, `clean_history` called; verified absent.
