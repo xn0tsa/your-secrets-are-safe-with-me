@@ -192,3 +192,34 @@ the auditor's own automation, not a third party:
 The remaining third-party actor is the minitts/uberip "r2" party ([EK-60](#EK-60)),
 which is unaffected by this correction. The frictionless-signup observation stands
 but is already covered as [EK-18](01-cloud-api.md#EK-18) — no duplicate counted.
+
+
+---
+
+<a id="EK-66"></a>
+## EK-66 · MEDIUM · Port 8080 on all three AI servers: open, protocol unknown
+
+All three inference instances (8.211.8.202, 8.221.114.171, 8.129.236.211) accept
+TCP on **8080** but stay silent to HTTP/1.1 (with and without Host header), TLS
+handshake, and the HTTP/2 prior-knowledge preface — tested from outside and from
+the vendor's own file server. Binary/internal protocol, unidentified: an unknown
+service is exposed to the internet on every instance serving the fleet.
+
+<a id="EK-67"></a>
+## EK-67 · HIGH (confirmation) · The :9091 control bus is public on the domestic server too
+
+`8.129.236.211:9091` answers `426 Upgrade Required` — the memory-pipeline
+WebSocket gateway ([EK-62](#EK-62)) is internet-exposed on the instance serving
+the Chinese fleet, the largest user base.
+
+---
+
+<a id="EK-RAM"></a>
+**Attribution note (RAM credentials)**: the vault key is RAM user `eilik`
+(account 1915500815804713, OSS-scoped — the audit's only positively-least-privilege
+secret, ActionTrail returns 403). Whether the r2 actor's metadata-SSRF campaign
+([EK-60-bis](#EK-60)) harvested and used instance role credentials **cannot be
+determined without the vendor's ActionTrail** — disclosure should ask the vendor
+to filter Aug 28 - Sep 5 for (a) API events under the ECS instance roles, (b) the
+actor's IPs, (c) any metadata-adjacent calls. Credential theft: possible, not
+demonstrated.

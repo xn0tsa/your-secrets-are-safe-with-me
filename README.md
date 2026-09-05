@@ -212,7 +212,7 @@ Underneath all three sits a product that promises secrecy to children.
 
 ```
 ├── README.md              # This document
-├── findings/              # The 65 findings (1 retracted), by domain (each file opens with its ID map)
+├── findings/              # The 68 findings (1 retracted), by domain (each file opens with its ID map)
 │   ├── 01-cloud-api.md    # EK-01..24 + EK-58/59, APIs, AI backend, CDN, LLM keyring
 │   ├── 02-infra.md        # EK-25..29, 49-50, 60-61: servers, compromise, concurrent admin actor, fleet routing
 │   ├── 03-firmware.md     # EK-32..37, OTA supply chain, hardcoded keys, device protocols
