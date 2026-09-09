@@ -375,3 +375,17 @@ authentication. Anyone can purge the production CDN (the firmware and content
 channel): cache-poisoning assistance (purge, then serve freshly uploaded content
 via [EK-70](#EK-70)) and economic DoS (mass billable purges). Not executed beyond
 the empty-body probe. Escalates P30 (the :9090 variant needed the forged JWT).
+
+
+---
+
+<a id="EK-74"></a>
+## EK-74 · HIGH · Content-moderation endpoints unauthenticated and unlimited — the vendor's Alibaba Green bill and verdicts are public
+
+`POST /api/system/content-check/testCheckTextContent {content, type}` with **no
+token** → 201 with the real moderation verdict (relayed through the vendor's
+runtime credentials). `testCheckImgContent` accepts an **arbitrary image URL**
+(verified with a CDN avatar). No rate limiting (5 rapid requests, all 201).
+Impact: billable moderation calls on the vendor's account at will, and a
+**moderation oracle** — anyone can pre-test whether content passes their filters
+before publishing it into the children's product.
