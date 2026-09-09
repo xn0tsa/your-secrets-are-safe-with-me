@@ -260,3 +260,15 @@ table served by API), `loginByPhone`/`requestPhoneCode` (unaudited phone flow),
 `generalSign`, `testSendFeishuMsg` (send messages into the company's own Feishu via
 their bot), `device-session`. Bonus: `/api/device-auth-fail-info` answers with **no
 authentication at all** (raw NestJS default response).
+
+
+---
+
+<a id="EK-84"></a>
+## EK-84 · HIGH · Shared Redis across regions — memory injection and pickle-RCE apply to the Chinese fleet too
+
+The Redis at 123.57.147.163 contains `memory-4101000-{sn}` keys for **Chinese
+robots** (sampled: 32-hex SNs). One password = one write primitive across both
+the international AND Chinese fleets. Combined with [EK-82](01-cloud-api.md#EK-82)
+(same JWT on both admin APIs): a single leaked secret file gives global,
+cross-region control of every robot's brain.
