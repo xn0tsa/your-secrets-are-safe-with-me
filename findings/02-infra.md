@@ -139,7 +139,13 @@ and 9090 to the internet; all three instances expose 8080 (unidentified service)
 ---
 
 <a id="EK-62"></a>
-## EK-62 · HIGH · Undocumented WebSocket :9091 — the profiling pipeline's control bus, gated only by the forgeable sign
+## EK-62 · MEDIUM (downgraded 2026-09-07) · Undocumented WebSocket :9091 — internal only (IPv6 bind + firewall REJECT)
+
+*Reclassified from HIGH: the listener binds `[::]:9091` only and the host's
+iptables INPUT chain REJECTs all IPv4 inbound — the port is **not reachable
+from the internet** (connection refused externally, confirmed). The analysis
+below documents the internal attack surface if the firewall changes or from any
+foothold on the box (trivial: SSH access documented as compromised).*
 
 The middleware container runs a WebSocket server on **:9091** (bound to `::`, i.e.
 exposed). Authentication is **only** the SignGuard arithmetic check (same forgery as
