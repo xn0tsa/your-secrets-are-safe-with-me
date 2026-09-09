@@ -435,3 +435,21 @@ a random password (the operator will need to reset).
 
 Full chain: LFI → .env → SECRET_KEY → forged 100-year legacy JWT → updateUser.php
 → ATO → back office admin access. No password ever needed.
+
+
+---
+
+<a id="EK-80"></a>
+## EK-80 · HIGH · `deleteUser.php` live on the legacy surface — account deletion via forged token
+
+`deleteUser.php` responds 401 "Invalid email" (not "Invalid token") — the endpoint
+exists and processes requests. With a forged legacy JWT for a victim's email
+(same secret as [EK-79](#EK-79)), account deletion is probable. Not executed on
+a real account (destructive).
+
+<a id="EK-81"></a>
+## EK-81 · MEDIUM · `sendEmail.php` returns 200 silently — phishing as the company probable
+
+`POST sendEmail.php {to, subject, body}` → 200 empty. If the send is effective
+(via the vault's SMTP credentials), this is a phishing vector with the company's
+identity (`info@account.energizelab.com`). Not confirmed (no email sent to a third party).
