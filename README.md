@@ -29,7 +29,8 @@
 | Credentials needed to mint pre-signed OSS URLs for any file, both buckets — **still works after full secret rotation** | **0** ([EK-70](findings/01-cloud-api.md#EK-70)) |
 | Credentials needed to make the vendor's own bot post inside their Feishu | **0** ([EK-71](findings/01-cloud-api.md#EK-71)) |
 | Months the production server has been owned by a third party | **6+** (webshells) — plus a **second, still-live unknown super_admin account** since Aug 29, whose SSRF campaign targets the cloud metadata service ([EK-60](findings/02-infra.md#EK-60)) |
-| Robots whose beliefs and behavior can be rewritten by anyone (public Redis key, no auth) | **the entire conversing fleet** |
+| Robots whose beliefs can be rewritten by anyone with Redis access | **the entire fleet** ([EK-51](findings/05-behavior.md#EK-51)) |
+| Robots whose beliefs can be rewritten by **simply talking to them** — no technical access at all | **the entire fleet** ([EK-78](findings/05-behavior.md#EK-78)) |
 | Remote code execution on the AI inference server (pickle history in the public Redis) | **confirmed deserialization of attacker bytes** ([EK-57](findings/05-behavior.md#EK-57), payload not executed) |
 | Jurisdiction where US/EU households' wake-word audio and family face photos are stored | **mainland China (Beijing bucket) + a US mirror** ([EK-56](findings/06-privacy.md#EK-56)) |
 
@@ -214,7 +215,7 @@ Underneath all three sits a product that promises secrecy to children.
 
 ```
 ├── README.md              # This document
-├── findings/              # The 77 findings (1 retracted), by domain (each file opens with its ID map)
+├── findings/              # The 78 findings (1 retracted), by domain (each file opens with its ID map)
 │   ├── 01-cloud-api.md    # EK-01..24 + EK-58/59, APIs, AI backend, CDN, LLM keyring
 │   ├── 02-infra.md        # EK-25..29, 49-50, 60-61: servers, compromise, concurrent admin actor, fleet routing
 │   ├── 03-firmware.md     # EK-32..37, OTA supply chain, hardcoded keys, device protocols
