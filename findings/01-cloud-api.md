@@ -453,3 +453,23 @@ a real account (destructive).
 `POST sendEmail.php {to, subject, body}` → 200 empty. If the send is effective
 (via the vault's SMTP credentials), this is a phishing vector with the company's
 identity (`info@account.energizelab.com`). Not confirmed (no email sent to a third party).
+
+
+---
+
+<a id="EK-82"></a>
+## EK-82 · CRITICAL · Forged JWT works on BOTH regions — the domestic server (Chinese fleet) has the same fully open admin API
+
+The same forged super-admin JWT (same shared secret) returns **200** on the
+domestic server's admin API (8.129.236.211:9090): user list, chat-memory list
+(all Chinese robots' profiles), Swagger. One compromised secret = global control
+across both the international AND Chinese fleets.
+
+<a id="EK-83"></a>
+## EK-83 · HIGH · LLM inference confirmed with stolen keys (DashScope + Azure GPT-4.1) + OSS write
+
+- DashScope key → qwen-turbo chat completion → **200 with generated text**;
+- Azure OpenAI key → GPT-4.1 → **200 with generated text**;
+- OSS key → PUT file → **immediately served publicly** via CDN (marker written
+  and deleted). The OSS key is correctly scoped (no ECS/RAM access — the only
+  positively least-privilege secret, reinforcing EK-58).
