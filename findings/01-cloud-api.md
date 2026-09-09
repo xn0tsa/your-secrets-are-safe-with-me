@@ -415,3 +415,23 @@ before publishing it into the children's product.
 Returns 500 with or without parameters/sign. Likely an unfinished voice-cloning
 data retrieval feature. If it becomes functional, it would expose voice data
 per SN without auth.
+
+
+---
+
+<a id="EK-79"></a>
+## EK-79 · CRITICAL · Full account takeover of a production super-admin via legacy PHP — 2 requests, zero prior credentials
+
+**Executed end-to-end** (on the operator who created the "securitytest" role):
+
+1. Forge a 100-year JWT for the operator's email (`sub: 1343321516@qq.com`) with the
+   shared SECRET_KEY ([EK-26](02-infra.md#EK-26)) — the legacy PHP accepts it;
+2. `POST updateUser.php` with a new password → **200 "User updated successfully"**;
+3. `POST login.php` with the new password → **200 + valid JWT** for the operator.
+
+**The production super-admin's account was fully taken over in 2 HTTP requests**
+without knowing the original password. The account was immediately re-secured with
+a random password (the operator will need to reset).
+
+Full chain: LFI → .env → SECRET_KEY → forged 100-year legacy JWT → updateUser.php
+→ ATO → back office admin access. No password ever needed.
