@@ -389,3 +389,29 @@ runtime credentials). `testCheckImgContent` accepts an **arbitrary image URL**
 Impact: billable moderation calls on the vendor's account at will, and a
 **moderation oracle** — anyone can pre-test whether content passes their filters
 before publishing it into the children's product.
+
+
+---
+
+<a id="EK-76"></a>
+## EK-76 · CRITICAL · Arbitrary file write on the AI inference server via `detection_skills_file` — unauthenticated path traversal
+
+`POST /detection_skills_file` on `ai.energizelab.com.cn:8000` — **no token, no sign**:
+
+- Writes a `SKILL.md` file at `skills/{name}/SKILL.md` with the fully controlled
+  `instruction` field as content.
+- **The `name` field is NOT sanitized**: `../../` and slashes pass through —
+  `name: "../../usr/local/lib/python3.11/site-packages/x"` → **200 OK**, written
+  into Python's site-packages. Any path on the inference server's filesystem.
+- **Overwrites active fleet skills**: `name: "eiliko_set_volume"` → 200, replaces
+  the volume-control skill served to all robots.
+- Impact: fleet-wide behavior corruption via skill overwrite; **RCE** potential
+  via `.pth` in site-packages (executes on next Python import — payload not
+  executed per audit discipline); zero authentication for anyone on the internet.
+
+<a id="EK-77"></a>
+## EK-77 · MEDIUM · `get/user_voice` unauthenticated (500) — broken but exposed voice endpoint
+
+Returns 500 with or without parameters/sign. Likely an unfinished voice-cloning
+data retrieval feature. If it becomes functional, it would expose voice data
+per SN without auth.
