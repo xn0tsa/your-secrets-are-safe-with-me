@@ -16,16 +16,16 @@
 
 | Category | Count |
 |---|---|
-| Conversations stored in cleartext (all product lines, counted 2026-09-01) | **8,301,976** |
+| Conversations stored in cleartext (all product lines, counted 2026-09-14) | **8,190,256** |
 | Robots that have ever conversed with the cloud | **55,457** |
 | Distinct home IP addresses on the Eiliko line alone | **103,956** |
 | Robots produced (all product lines) | **~171,000** (149,486 Eiliko alone) |
 | User accounts (emails, phones, no auth needed to read) | **65,273** |
-| Child profiles extracted by the nightly pipeline | **31,450** (24 fields each, incl. home address and parental info) |
+| Child profiles extracted by the nightly pipeline | **32,228** (Sept 14) |
 | Wake-word audio archives on a public CDN | **3,994 archives** of household voices (counted 2026-09-05) |
 | Family face photos on a public CDN | **419** (2026-09-05; plus 1,950+ avatars in the HK bucket alone) |
 | Admin accounts protected by the password `123456` | **5**, including the super-admin |
-| Secrets rotated as of the Sept 9 retest (8+ days after discovery) | **0** — the LFI is still open, every leaked secret unchanged |
+| Secrets rotated as of the **Sept 14** retest (12 days after discovery) | **0** — LFI still open, every secret unchanged, webshells still on the server |
 | Credentials needed to mint pre-signed OSS URLs for any file, both buckets — **still works after full secret rotation** | **0** ([EK-70](findings/01-cloud-api.md#EK-70)) |
 | Credentials needed to make the vendor's own bot post inside their Feishu | **0** ([EK-71](findings/01-cloud-api.md#EK-71)) |
 | Months the production server has been owned by a third party | **6+** (webshells) — plus a **second, still-live unknown super_admin account** since Aug 29, whose SSRF campaign targets the cloud metadata service ([EK-60](findings/02-infra.md#EK-60)) |
