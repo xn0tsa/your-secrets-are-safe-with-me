@@ -104,3 +104,63 @@ Determined 2026-09-05 by listing both OSS buckets directly (Aliyun keys from the
 the wake-word and face data are the Art. 9-adjacent categories of [EK-23](01-cloud-api.md#EK-23));
 PIPL art. 38-40 for the inverse flow. The routing is fixable in one line, which makes
 six months of US/EU voice recordings in `energize-cn` a documented choice by inertia.
+
+---
+
+<a id="EK-92"></a>
+## EK-92 · HIGH · Cloned-voice TTS fleet config: editable and test-generable from the back office
+
+The back office exposes the full voice stack with no additional protection beyond the (forgeable, [EK-10](01-cloud-api.md#EK-10)) admin session: `/eilikoCfg/aiModelCfg` holds ~36 per-language model cards with **CosyVoice voices cloned per product and language (Taiwanese-accented Mandarin included)**, each **editable and testable in place**, and `/langTestLog/generate` **synthesizes speech in those cloned voices** on demand. Whoever holds an admin JWT can therefore (a) generate arbitrary audio in the official voices of every product, and (b) rewrite which voice each language's fleet speaks with — a fleet-wide "voice swap" one click away, chained on [EK-04](01-cloud-api.md#EK-04).
+
+**Retest 2026-09-01 / 2026-09-14**: ❌ OPEN.
+**Fix**: require step-up auth (MFA + audit log) for any TTS/voice configuration change and for voice generation.
+
+---
+
+---
+
+<a id="EK-93"></a>
+## EK-93 · HIGH · One household = one IP: 97,802 geolocatable homes with full transcripts
+
+Every stored conversation row carries the household's **public IP** next to the robot SN, the full question/answer text and the ASR/LLM/TTS timings. The August 2026 census (13.1M messages) counted **97,802 distinct public IPs**. Geolocation services resolve these to city/street level; the five heaviest households accumulate 108k, 71k, 43k, 31k and 25k conversations each. Combined with self-introductions in the text — **30,742 robots (29.9% of the fleet) have a user giving their first name, 104 messages pair a first name with an age of 3-12** — the store is a ready-made **geolocated behavioral map of families**, one `SELECT` away for anyone with [EK-10](01-cloud-api.md#EK-10) or [EK-25](02-infra.md#EK-25).
+
+```sql
+SELECT COUNT(DISTINCT ip) FROM chat_data.eilikoqa;   -- 97,802 (Aug 2026)
+```
+
+**Retest 2026-09-14**: ❌ OPEN (8,190,256 conversations still stored and growing).
+**Fix**: stop storing IPs with transcripts (or truncate/aggregate after use), pseudonymize SN↔IP joins.
+
+---
+
+---
+
+<a id="EK-94"></a>
+## EK-94 · HIGH · What children disclose: WiFi keys, safe codes, absences — stored next to the IP
+
+Keyword mining of the corpus (documented sets, no clinical claims) shows the robots routinely receive **in-home secrets**: 88 robots received a usable **password** (WPA keys, safe codes) and 61 **access codes** (alarm/door/garage); **151 households stated they were home alone** and **3,873 disclosed absences**; 420 touch/"bad touch"/"private" indicators were found — mostly playful noise, but including genuine statements of concern, with **no pattern of a third-party adult speaking through the robot**. Medical disclosures fall under [EK-47](#EK-47). The threat is indirect but concrete: first name + age + home IP + routines + the WPA key said out loud is a ready-made targeting profile ([EK-93](#EK-93), [EK-45](#EK-45)).
+
+**Retest 2026-09-14**: ❌ OPEN (corpus in production, cleartext, exposed RDS).
+**Fix**: crisis/secrets filter at inference time, encryption at rest, IP dissociation ([EK-93](#EK-93)).
+
+---
+
+---
+
+<a id="EK-95"></a>
+## EK-95 · INFO · Fleet census: ~171,000 robots produced, ¥256k of AI burn (back-office production stats)
+
+The back-office project pages quantify the exposure surface of every other finding (2026-08-23):
+
+| Product line | Units produced | Conversations | Avg daily use |
+|---|---|---|---|
+| **Eiliko** | **149,486** (20,589 that month) | **7,429,010** | 2 min 10 s |
+| WealthyGod (财神) | 10,164 | 92,812 | 52 s |
+| **AI Station (camera dock)** | **10,005** | 385,600 | 1 min 36 s |
+| Meteer (global/CN/KR) | 743 / 556 / 10 | 12,844 / 18,534 / 836 | ~1.5-2 min |
+| MiniEiliko (prototype) | 8 | 836 | 1 min 26 s |
+
+Cumulative Eiliko AI spend displayed: **¥256,093.22** (ASR-dominated — which explains why the unauthenticated inference relay [EK-02](01-cloud-api.md#EK-02) is almost pure ASR burn). Total parc ≈ **171,000 units**.
+
+**Retest 2026-09-14**: conversations re-counted at 8,190,256, still growing.
+**Fix**: n/a (census) — the scale denominator for EK-45/47/93/94.

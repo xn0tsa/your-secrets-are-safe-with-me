@@ -272,3 +272,45 @@ robots** (sampled: 32-hex SNs). One password = one write primitive across both
 the international AND Chinese fleets. Combined with [EK-82](01-cloud-api.md#EK-82)
 (same JWT on both admin APIs): a single leaked secret file gives global,
 cross-region control of every robot's brain.
+
+---
+
+<a id="EK-88"></a>
+## EK-88 · HIGH · Secret sprawl on the shared box: MySQL root in a `.bak`, SSH host keys, panel tokens
+
+Beyond the application vault ([EK-09](01-cloud-api.md#EK-09)), the box itself is littered with live credentials (read via the SSH root of [EK-27](#EK-27)): `/etc/my.cnf.bak` line 58 preserves the **local MySQL root password** since 2022 (validated live — opens `eilik_user` 34,532 legacy accounts); complete **SSH host private keys** (RSA/Ed25519/ECDSA/DSA) enable server impersonation/MITM; MySQL CA/TLS private keys including test CAs in production; a reusable **BaoTa panel session token** in `/www/server/panel/data/login_token.pl`.
+
+```bash
+grep -n 'password' /etc/my.cnf.bak        # → 58: password="[redacted]"
+```
+
+**Retest 2026-09-01 / 2026-09-14**: ❌ OPEN (zero secrets rotated anywhere on 09-14).
+**Fix**: purge every `.bak`/key artifact, rotate the local MySQL root, regenerate host keys.
+
+---
+
+---
+
+<a id="EK-89"></a>
+## EK-89 · HIGH · 15 daily BaoTa backups: the full database history next to the webshells
+
+BaoTa's scheduled tasks dump **every local database daily** and every site weekly, keeping **15 rolling ZIPs in `/www/backup/panel/`** — MySQL dumps, site archives, panel configs: the complete historical record of the legacy databases, sitting on the same box where a third party has operated ~19 webshells since March 2026 ([EK-29](#EK-29)). A `www`-user read of one ZIP hands over the full history of `eilik_user` and `energize_user`, including accounts deleted from production.
+
+```bash
+ls /www/backup/panel/    # 2026-08-23.zip + 14 predecessors
+```
+
+**Retest 2026-09-01 / 2026-09-14**: ❌ OPEN (box remains compromised).
+**Fix**: move backups off-box (encrypted object storage), root-only permissions, shorter retention.
+
+---
+
+---
+
+<a id="EK-90"></a>
+## EK-90 · MEDIUM · Developer artifacts on the production server (load-test client, voice samples)
+
+`/root/test/client2.py`: a developer test client (locust load tests at 1,000 concurrent users, RSA-OAEP crypto mirroring the SignGuard scheme) plus **5 OGG voice samples** — the ASR inference path is tested from this server with direct credentials. Residuals: retired-Java-service artifacts in `/var/tmp/`, empty dev project dirs (July 2026), a legacy upload dir. Readable only with the root access of [EK-27](#EK-27).
+
+**Retest 2026-09-01 / 2026-09-14**: ❌ OPEN (box unchanged).
+**Fix**: strip dev/QA material from production hosts.
