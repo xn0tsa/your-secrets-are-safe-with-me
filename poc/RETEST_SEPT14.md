@@ -8,7 +8,7 @@ Full automated retest of all 44 remotely testable findings (`retest_sept14.py`).
 | **FIXED** | 2 |
 | **PARTIAL** | 1 |
 
-## The only two fixes in 12 days
+## The only fix and the only partial cleanup in 12 days
 
 1. **EK-12** — `GET /api/user/list` without Bearer now returns 401 (was: 200).
 2. **EK-23/56** — `device_face/` and `wake_up/` folders partially cleaned on the international CDN. Avatars and firmware OTA remain publicly downloadable. Chinese CDN status indeterminate (522).

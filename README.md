@@ -2,13 +2,13 @@
 
 ## A children's companion robot that promises kids their secrets stay private while it transcribes every word to a Beijing database, a nightly pipeline profiles the children, and anyone with six HTTP requests reads any family's conversations in the vendor's own back office
 
-**Report Date:** September 1, 2026 (audit started June 14, 2026, 60 phases, retested the same day)
+**Report Date:** September 22, 2026 (initial: September 1; retests Sept 9/14/22) (audit started June 14, 2026, 85 phases, retested the same day)
 
 **Researcher:** Sammy Azdoufal
 
 **Research Type:** Independent. I bought an Eilik. Palm-sized desk robot, expressive face, and you talk to it: speak, it answers out loud. The brain is not in the robot. Your words are transcribed and sent to a cloud LLM, and the reply comes back as a synthesized voice. Marketed as a companion, mostly for kids. I installed the Android app and decompiled it. Twenty minutes later the first hardcoded `http://` URL fell out. Everything after that was pulling threads for two and a half months. On the last night I sat down with my own robot and asked it whether it keeps secrets. This repo is named after its answer.
 
-**Evidence Sources:** Static analysis of `com.energizeLab` v3.0.0 (APK plus full Hermes decompilation, 548,906 lines of recovered JS) and the leaked debug build v3.0.3. Live API testing against `auth.energizelab.com.cn:9080`, `ai.energizelab.com.cn:8000`, two admin instances, and the Alibaba OSS CDN. Firmware reverse engineering for 9 product lines (Rockchip RK3562 Linux robots, ESP32, STM32, JieLi). Three Windows desktop applications. Full read-only validation of the leaked secret vault (MySQL RDS, Redis, SSH). All 50 findings retested non-destructively on September 1, 2026.
+**Evidence Sources:** Static analysis of `com.energizeLab` v3.0.0 (APK plus full Hermes decompilation, 548,906 lines of recovered JS) and the leaked debug build v3.0.3. Live API testing against `auth.energizelab.com.cn:9080`, `ai.energizelab.com.cn:8000`, two admin instances, and the Alibaba OSS CDN. Firmware reverse engineering for 9 product lines (Rockchip RK3562 Linux robots, ESP32, STM32, JieLi). Three Windows desktop applications. Full read-only validation of the leaked secret vault (MySQL RDS, Redis, SSH). All findings retested non-destructively on September 1, 2026.
 
 ---
 
@@ -59,7 +59,7 @@ In June 2026 I bought an Eilik, the desk companion robot from Energizelab. It si
 
 I did what I always do. Installed the app, decompiled it. The first thing that falls out of `BuildConfig.java` is that every backend URL is `http://`. Not one lazy endpoint. All of them. The authentication server, the AI server, the file server: plaintext HTTP, hardcoded, on weird ports, one of them on a raw Vultr IP. For a product whose entire premise is listening to your children.
 
-That was a Tuesday. Sixty audit phases later I had gone through the APK, the Hermes bundle, the cloud APIs, the admin panels, the firmware of nine product lines, three Windows desktop apps, a factory QA database, and finally the production servers themselves. Every thread led to another thread. 327 raw findings, distilled here into 50.
+That was a Tuesday. Sixty audit phases later I had gone through the APK, the Hermes bundle, the cloud APIs, the admin panels, the firmware of nine product lines, three Windows desktop apps, a factory QA database, and finally the production servers themselves. Every thread led to another thread. 376 raw findings across 85 phases, distilled here into 93 EKs (92 + 1 retracted).
 
 On August 31, the night before the final retest, I paired my own robot to my own account and had the conversation that names this repo. It is transcribed verbatim in the next section. While the robot was promising me the company could never hear our chat, every word was being transcribed and stored in plaintext in a Beijing datacenter. I read it back from the database an hour later, next to millions of conversations belonging to other families.
 
@@ -215,7 +215,7 @@ Underneath all three sits a product that promises secrecy to children.
 
 ```
 ├── README.md              # This document
-├── findings/              # The 84 findings (1 retracted), by domain (each file opens with its ID map)
+├── findings/              # The 93 findings (1 retracted), by domain (each file opens with its ID map)
 │   ├── 01-cloud-api.md    # EK-01..24 + EK-58/59, APIs, AI backend, CDN, LLM keyring
 │   ├── 02-infra.md        # EK-25..29, 49-50, 60-61: servers, compromise, concurrent admin actor, fleet routing
 │   ├── 03-firmware.md     # EK-32..37, OTA supply chain, hardcoded keys, device protocols
@@ -230,7 +230,7 @@ Underneath all three sits a product that promises secrecy to children.
 │   ├── poc_04_supply_chain.py # Pre-signed PUT for production firmware (no upload)
 │   ├── poc_05_memory_inject.py # Redis memory rewrite + voice-pipeline verification (own devices)
 │   ├── hijack/            # Device takeover (rogue AP, fake AI server, session poisoning)
-│   └── dashboard/         # Flask mass-exfiltration proof (65K users, 8.3M conversations)
+│   └── dashboard/         # Flask demonstration of exfiltratable data (65K users, 8.3M conversations)
 └── artifacts/             # Small proof files, revalidated Sept 1 (see artifacts/README.md)
     ├── apk/               # BuildConfig.java + AndroidManifest.xml, the smoking guns
     ├── firmware/104000/   # Extracted init scripts, the unsigned-OTA evidence
@@ -264,4 +264,4 @@ There is no settings change on your side that fixes any of this. The honest advi
 
 ---
 
-*All testing was performed against my own accounts, my own devices, and production infrastructure in a strictly non-destructive manner: read-only access, fictitious serial numbers, payloads immediately restored or neutralized. No third-party data was modified. No firmware was uploaded. Database queries returned counts and my own records, never other people's.*
+*All testing was performed against my own accounts, my own devices, and production infrastructure in a strictly non-destructive manner: read-only access, fictitious serial numbers, payloads immediately restored or neutralized. No third-party data was modified. No firmware was uploaded. Database queries were limited to counts, aggregates and my own records — with four documented exceptions, each time-boxed and minimized: two third-party device rebindings restored the same day (EK-15), one marker write in a third-party robot memory reverted within minutes (EK-16), one orphaned voice archive downloaded for proof and deleted (EK-70), and read-only back-office navigation (EK-10). No third-party data was retained or published; only aggregates appear in this repository.*

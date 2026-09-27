@@ -9,7 +9,7 @@ Usage: python3 history_poison_v2.py
 import time, json, subprocess
 
 BASE = "http://ai.energizelab.com.cn:8000"
-OUR_SN = "1034331e0162310115f163f601623101"
+OUR_SN = "<SN_AUDITOR>"
 
 def call(path, body=None, method="POST"):
     if body is not None:

@@ -49,7 +49,7 @@ python3 poc_04_supply_chain.py --jwt "$JWT"
 ## `retest.py`: full retest harness
 
 ```bash
-python3 retest.py --env ../eilik-poc/.env --out .        # everything
+python3 retest.py --env .env --out .        # everything
 python3 retest.py --skip-infra                            # without MySQL/Redis/SSH
 ```
 
@@ -74,5 +74,13 @@ cd dashboard && docker compose up -d
 open http://localhost:8080
 ```
 
-The `test_*.sh` scripts in the dashboard individually test: PII enumeration,
+The dashboard individually test: PII enumeration,
 unauthenticated AI inference, the admin backend, and voice cloning.
+
+## Scope-locked PoCs (EK-85/86)
+
+| Script | Purpose |
+|---|---|
+| `poc_injection_totale.py` | Full persona injection (memory + forged history + optional Grok window), scope-locked to the auditor's devices |
+| `poc_restauration.py` | Complete restoration (config, servers, Redis, relay teardown, non-regression test) |
+| `retest_sept14.py` | Automated retest of 44 remotely testable findings (credentials via environment) |

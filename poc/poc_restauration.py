@@ -118,7 +118,7 @@ def test_final():
         headers={'Host': 'ai.energizelab.com.cn', 'Content-Type': 'audio/wav',
                  'sign': forge_sign(sn)}, timeout=120)
     from server_admin import mysql_query
-    rows = mysql_query("SELECT a, llm_first_time FROM eilikoqa WHERE sn LIKE '1034331e%' "
+    rows = mysql_query("SELECT a, llm_first_time FROM eilikoqa WHERE sn LIKE '<SN_AUDITOR>%' "
                        "ORDER BY id DESC LIMIT 1", database='chat_data')
     a = rows[0]['a'].lower() if rows else ''
     residuel = any(m in a for m in ('sammy', 'minion', 'bzzt'))

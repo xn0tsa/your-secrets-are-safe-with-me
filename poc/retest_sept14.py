@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Retest complet de tous les EK — 14 septembre 2026
-Eterniti Security — EnergizeLab audit retest day 3
+Independent security research — EnergizeLab audit retest day 3
 
 Chaque check est NON-DESTRUCTIF (lecture seule ou probes vides).
 Sortie: RETEST_SEPT14.md avec statut OPEN/FIXED/PARTIAL pour chaque EK.
@@ -36,10 +36,10 @@ IwIDAQAB
 
 now = int(time.time())
 try:
-    tok = pyjwt.encode({'id':1,'email':'1226028048@qq.com','user_source':'admin_web',
+    tok = pyjwt.encode({'id':1,'email':'122602****@qq.com','user_source':'admin_web',
                         'login_method':'mail_code','iat':now,'exp':now+7200}, SECRET, algorithm='HS256')
 except:
-    tok = pyjwt.encode({'id':1,'email':'1226028048@qq.com','user_source':'admin_web',
+    tok = pyjwt.encode({'id':1,'email':'122602****@qq.com','user_source':'admin_web',
                         'login_method':'mail_code','iat':now,'exp':now+7200}, SECRET, algorithm='HS256')
 H = {'Authorization': f'Bearer {tok}', 'token': tok, 'Content-Type': 'application/json'}
 S = requests.Session()
@@ -201,7 +201,7 @@ do('EK-05 History wipe', ek05)
 def ek51():
     import redis, json as j
     r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PWD, decode_responses=True, socket_timeout=10)
-    v = r.get('memory-4101000-105567023435313332593cf0a7fc90ff')
+    v = r.get('memory-4101000-<SN_AUDITOR>')
     if v and 'unknown' not in v: return ('OPEN', f'Mémoire injectable: {v[:50]}')
     return ('OPEN', 'Clé accessible (état unknown)') if v else ('OPEN', 'Clé accessible (absente)')
 do('EK-51 Personnalité Redis', ek51)
@@ -267,7 +267,7 @@ def ek76():
 do('EK-76 File write AI server', ek76)
 
 def ek79():
-    lt = pyjwt.encode({'sub':'1343321516@qq.com','iat':now,'exp':now+3600}, SECRET, algorithm='HS256')
+    lt = pyjwt.encode({'sub':'13433****@qq.com','iat':now,'exp':now+3600}, SECRET, algorithm='HS256')
     r = S.post(f'{LEGACY_789}/updateUser.php', json={'username':'retest14'}, headers={'Authorization':f'Bearer {lt}'}, timeout=15)
     return ('OPEN', 'updateUser accepte JWT forgé') if r.status_code == 200 else ('FIXED', f'{r.status_code}')
 do('EK-79 ATO legacy PHP', ek79)

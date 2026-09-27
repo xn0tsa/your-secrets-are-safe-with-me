@@ -1,4 +1,4 @@
-# Findings: Firmware & devices (EK-32, EK-33, EK-34, EK-35, EK-36, EK-37, EK-91)
+# Findings: Firmware (EK-32 → EK-37, EK-91)
 
 None of the firmware channels below verify a signature. Not the OTA, not the USB update, not the MCU flash. Everything accepts whatever it is given. Products identified: original Eilik (ESP32, mode 4101000: Flash Encryption active, not remotely bypassable), Eiliko (4101000), the new Linux robot **RK3562** (104000), the AI Station camera (104000/ES), Meteer, WealthyGod, MiniEiliko, the ServoBrain hexapod + a quadruped in development, JieLi 3102999, STM32 5103003, Panxer/Maticontroller (MCU). Rockchip RK3562 SoC, Buildroot 2021.11, kernel 5.10 BSP.
 

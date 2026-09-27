@@ -10,7 +10,7 @@ The app stores your password in cleartext and survives logout doing it. Target: 
 ---
 
 <a id="EK-38"></a>
-## EK-38 · CRITICAL · Password stored in cleartext on disk, survives logout
+## EK-38 · HIGH · Password stored in cleartext on disk, survives logout
 
 After login, the form password is written **unconditionally** into the persisted Redux store (`persist:root` → AsyncStorage, `user.userInfo.password`): the "remember me" checkbox is a decorative label. `clearUserData` on logout resets `id/username/avatar/nickname` but **not** `password`/`email`/`phone` (Object.assign merge); `wifiSsidPwd` is never purged; a 401 on refresh redirects to Login with no cleanup. Zero `EncryptedSharedPreferences`/Keystore usage.
 

@@ -1,5 +1,5 @@
 -- Eilik PoC: PostgreSQL Schema
--- Energizelab Security Audit: Eterniti Security 2026
+-- Energizelab Security Audit: Independent security research 2026
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 

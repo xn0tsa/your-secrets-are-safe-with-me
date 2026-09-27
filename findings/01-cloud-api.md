@@ -1,6 +1,6 @@
-# Findings: Cloud & API (EK-01 → EK-24)
+# Findings: Cloud & API (EK-01 → EK-24, EK-58, EK-59, EK-70 → EK-74, EK-76, EK-77, EK-79 → EK-83, EK-87, EK-96)
 
-Four servers, zero TLS, and a Swagger UI on each one telling you where everything is. Servers: `auth.energizelab.com.cn:9080` (NestJS auth, 163 endpoints) · `45.32.81.33:9090` (NestJS admin, Vultr, 175 endpoints) · `8.129.236.211:9090` (Alibaba admin, 219 endpoints: same code, same `.env`) · `ai.energizelab.com.cn:8000` (FastAPI AI) · `8.221.114.171:8000` (international AI) · CDN `file`/`filecn.energizelab.com.cn` (Alibaba OSS cn+hk).
+Five servers, zero TLS, and a Swagger UI on each one telling you where everything is. Servers: `auth.energizelab.com.cn:9080` (NestJS auth, 163 endpoints) · `45.32.81.33:9090` (NestJS admin, Vultr, 175 endpoints) · `8.129.236.211:9090` (Alibaba admin, 219 endpoints: same code, same `.env`) · `ai.energizelab.com.cn:8000` (FastAPI AI) · `8.221.114.171:8000` (international AI) · CDN `file`/`filecn.energizelab.com.cn` (Alibaba OSS cn+hk).
 
 ---
 
@@ -69,7 +69,7 @@ With a plain user JWT (OTP, no rate limit):
 ---
 
 <a id="EK-05"></a>
-## EK-05 · HIGH · Session poisoning & history wipe by SN
+## EK-05 · CRITICAL · Session poisoning & history wipe by SN
 
 `GET /clean_history?sn=<any SN>` (no auth) wipes the targeted robot's conversation history; sending messages under a third party's SN injects context into their session. No SN-to-owner linkage.
 
@@ -132,11 +132,11 @@ Via [EK-08](#EK-08), the 3 `.env` files (`/usr/src/app/.env`, `.env.domestic`, `
 <a id="EK-10"></a>
 ## EK-10 · CRITICAL · Super-admin JWT forgery
 
-With `ACCESS_TOKEN_SECRET` ([EK-09](#EK-09)), a JWT for account id=1 (super-admin `1226028048@qq.com`) is forged and accepted by both servers. Variants: full back-office session without login (P42, native bulk export buttons), legacy JWTs valid for **100 years** signed with the same key (P41-C-02).
+With `ACCESS_TOKEN_SECRET` ([EK-09](#EK-09)), a JWT for account id=1 (super-admin `122602****@qq.com`) is forged and accepted by both servers. Variants: full back-office session without login (P42, native bulk export buttons), legacy JWTs valid for **100 years** signed with the same key (P41-C-02).
 
 ```python
 import jwt, time
-tok = jwt.encode({"id":1,"email":"1226028048@qq.com","user_source":"admin_web",
+tok = jwt.encode({"id":1,"email":"122602****@qq.com","user_source":"admin_web",
                   "login_method":"mail_code","iat":int(time.time()),"exp":int(time.time())+600},
                  ACCESS_TOKEN_SECRET, algorithm="HS256")   # → accepted (getUserInfo returns the id=1 profile)
 ```
@@ -187,7 +187,7 @@ A standard user JWT reads everything, paginated (counted 2026-09-01): `/api/user
 ---
 
 <a id="EK-15"></a>
-## EK-15 · CRITICAL · Robot theft in 3 HTTP calls
+## EK-15 · CRITICAL · Device rebinding in 3 HTTP calls ("robot theft")
 
 `GET /api/user-device/list` (victim's ud_id) → `DELETE /api/user-device/{id}` (no ownership check) → `POST /api/user-device/create` (bind to attacker account). Proven twice on third-party devices with restoration (2026-08-15); plus `PATCH /api/device-use-stat/{sn}/lock` = permanent DoS.
 
@@ -245,7 +245,7 @@ Every `/api/chat-memory/*` endpoint accepts an arbitrary SN without ownership ch
 ---
 
 <a id="EK-21"></a>
-## EK-21 · HIGH · Public Swagger
+## EK-21 · MEDIUM · Public Swagger
 
 `ai:8000/openapi.json` (24+ endpoints), admin `:9090` ×2 (175/219 endpoints in `swagger-ui-init.js`), auth `:9080/docs-json` (163 endpoints). This served as the attack map for the entire audit.
 
@@ -303,7 +303,7 @@ Without authentication: `wake_up/` (3,300 archives, 630 MB of household voices, 
 - `model-use-info` adds the Alibaba NLS ASR app key and the cosyvoice TTS binding.
 
 <a id="EK-59"></a>
-## EK-59 · HIGH · Unauthenticated `/model/set?id=N` — a fleet-wide model switch
+## EK-59 · CRITICAL · Unauthenticated `/model/set?id=N` — a fleet-wide model switch
 
 `GET /model/set?id=N` sits next to `/model/get` on the authless AI server. Semantics
 not fully mapped (mapping it requires a production mutation, deliberately not
@@ -424,7 +424,7 @@ per SN without auth.
 
 **Executed end-to-end** (on the operator who created the "securitytest" role):
 
-1. Forge a 100-year JWT for the operator's email (`sub: 1343321516@qq.com`) with the
+1. Forge a 100-year JWT for the operator's email (`sub: 13433****@qq.com`) with the
    shared SECRET_KEY ([EK-26](02-infra.md#EK-26)) — the legacy PHP accepts it;
 2. `POST updateUser.php` with a new password → **200 "User updated successfully"**;
 3. `POST login.php` with the new password → **200 + valid JWT** for the operator.

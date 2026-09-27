@@ -1,4 +1,4 @@
-# Findings: Infrastructure & servers (EK-25 → EK-29, EK-49, EK-50)
+# Findings: Infrastructure (EK-25 → EK-29, EK-49, EK-50, EK-60 → EK-69, EK-84, EK-88 → EK-90)
 
 One rented box runs the whole company: the admin API, the firmware CDN origin, the legacy PHP, the databases, the panels. It was co-hosted with two Pakistani institutions: `nicon.edu.pk` (vocational training institute, Rawalpindi) and `qmmb.gov.pk` (Quaid-i-Azam Mazar Management Board, the federal body maintaining the mausoleum of Pakistan's founder). Proof of hosting: Let's Encrypt certs for both domains issued on the box on 2026-03-22 (ACME validation requires the DNS to point there). Same user, same php-fpm, no isolation. Both domains moved off the box later in 2026; their vhosts, expired certs, and the webshells remain. Main server: `45.32.81.33` (Vultr, CentOS 7 EOL, kernel 3.10): a multi-tenant **BaoTa** box hosting the admin API (`station-middleware:1.8.2`, Docker, root), the CDN file origin, the legacy PHP API (:789), the BaoTa panel (:8888), phpMyAdmin (:888), FTP (:21), local MySQL (:3306): and two third-party Pakistani sites: `nicon.edu.pk` (a vocational training institute, Rawalpindi) and `qmmb.gov.pk` (the Quaid-i-Azam Mazar Management Board, maintaining the mausoleum of Pakistan's founder). Alibaba: `8.129.236.211` / `8.221.114.171` (VPC `192.168.0.x`: internal MySQL/Redis, MEMORY_SRV).
 
@@ -111,7 +111,7 @@ chain documented here (leaked JWT secret → role creation → persistence,
 non-operator admin parties simultaneously** during this audit. Our own identities
 are distinct and listed (one mail.tm refresh account, the auditor's own accounts).
 
-**Addendum (2026-09-05, EK-60-bis · CRITICAL)**: the contents of
+**Addendum (2026-09-05, EK-60 (cont.) · CRITICAL)**: the contents of
 `t_ai_server_db_host` are themselves an attack journal — ~30 probe rows left by the
 same actor map a systematic SSRF campaign through the DB-config-driven endpoints:
 Alibaba metadata credentials (`169.254.169.254/latest/meta-data/ram/security-credentials/`
@@ -192,7 +192,7 @@ the auditor's own automation, not a third party:
   range) are the audit's `fast_sync` JWT refresher: every token expiry creates one
   throwaway mail.tm account (2 h = `ACCESS_TOKEN_EXPIRATION`). Confirmed by the
   refresh account's own login record;
-- the Sep 2-3 waves (`194.88.99.176`) and the Sep 1 `EilikAudit-Retest/2026-09`
+- the Sep 2-3 waves (`<auditor-team VPS>`) and the Sep 1 `EilikAudit-Retest/2026-09`
   user-agent hit come from an **auditor-team VPS** running the same harness.
 
 The remaining third-party actor is the minitts/uberip "r2" party ([EK-60](#EK-60)),
@@ -224,7 +224,7 @@ the Chinese fleet, the largest user base.
 **Attribution note (RAM credentials)**: the vault key is RAM user `eilik`
 (account 1915500815804713, OSS-scoped — the audit's only positively-least-privilege
 secret, ActionTrail returns 403). Whether the r2 actor's metadata-SSRF campaign
-([EK-60-bis](#EK-60)) harvested and used instance role credentials **cannot be
+([EK-60 (cont.)](#EK-60)) harvested and used instance role credentials **cannot be
 determined without the vendor's ActionTrail** — disclosure should ask the vendor
 to filter Aug 28 - Sep 5 for (a) API events under the ECS instance roles, (b) the
 actor's IPs, (c) any metadata-adjacent calls. Credential theft: possible, not
@@ -289,8 +289,6 @@ grep -n 'password' /etc/my.cnf.bak        # → 58: password="[redacted]"
 
 ---
 
----
-
 <a id="EK-89"></a>
 ## EK-89 · HIGH · 15 daily BaoTa backups: the full database history next to the webshells
 
@@ -302,8 +300,6 @@ ls /www/backup/panel/    # 2026-08-23.zip + 14 predecessors
 
 **Retest 2026-09-01 / 2026-09-14**: ❌ OPEN (box remains compromised).
 **Fix**: move backups off-box (encrypted object storage), root-only permissions, shorter retention.
-
----
 
 ---
 
