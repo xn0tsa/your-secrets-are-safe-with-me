@@ -1,4 +1,4 @@
-# Findings: Client applications (EK-38 → EK-44)
+# Findings: Client applications (EK-38, EK-39, EK-40, EK-41, EK-42, EK-43, EK-44)
 
 The app stores your password in cleartext and survives logout doing it. Target: `com.energizeLab` v3.0.0 (versionCode 23, React Native 0.77.3, Hermes v96) + the debug build v3.0.3 published on public OSS ([EK-23](01-cloud-api.md#EK-23)). The Hermes bundle was fully decompiled (548,906 lines of recovered JS). Positive controls listed at the end.
 

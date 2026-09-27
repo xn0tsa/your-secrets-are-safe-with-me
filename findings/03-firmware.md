@@ -1,4 +1,4 @@
-# Findings: Firmware & devices (EK-32 → EK-37)
+# Findings: Firmware & devices (EK-32, EK-33, EK-34, EK-35, EK-36, EK-37, EK-91)
 
 None of the firmware channels below verify a signature. Not the OTA, not the USB update, not the MCU flash. Everything accepts whatever it is given. Products identified: original Eilik (ESP32, mode 4101000: Flash Encryption active, not remotely bypassable), Eiliko (4101000), the new Linux robot **RK3562** (104000), the AI Station camera (104000/ES), Meteer, WealthyGod, MiniEiliko, the ServoBrain hexapod + a quadruped in development, JieLi 3102999, STM32 5103003, Panxer/Maticontroller (MCU). Rockchip RK3562 SoC, Buildroot 2021.11, kernel 5.10 BSP.
 
@@ -99,3 +99,13 @@ The GATT protocol was fully reconstructed from the decompiled Hermes bundle: ser
 - Positive: ESP32 products (original Eilik + new lines) have Flash Encryption active, firmware encrypted at rest.
 
 **Fix**: anti-rollback, remove credential logs, encrypt + sign every distributed artifact.
+
+---
+
+<a id="EK-91"></a>
+## EK-91 · HIGH · Factory flasher: signature checks disabled, secure-boot efuse never burned
+
+The Windows flasher for the AI Station (a rebranded Rockchip FactoryTool) was reverse-engineered offline. It talks to the device over 4 physical vectors — USB mass-storage, ADB (push + `factory_unzip`, `fw_setenv`), UVC (a camera control reboots the unit into Loader), and rockusb maskrom/loader (VID 0x2207) — and the `fwupd` serial protocol itself has **no authentication** (`PING → SWITCH_USB_MODE → REBOOT_LOADER → DEPLOY`): the device puts itself into Loader mode on command, no maskrom pin needed. The protections exist in code but are all switched off in the shipped tool: signature verification `FW_NOT_CHECK=true`, secure-boot **efuse never burned at the factory**, anti-rollback off, flash locking off. Physical access therefore equals **arbitrary flash, full dump, brick, or falsified `serial_id` provisioning** on any unit, compounded by the universal image key ([EK-33](#EK-33)).
+
+**Retest 2026-09-01**: ❌ OPEN (flasher tool and 3.43 GB firmware zip remain publicly downloadable — [EK-23](01-cloud-api.md#EK-23)).
+**Fix**: burn the secure-boot efuse and enforce signature + anti-rollback in the factory tool before the next production run.
