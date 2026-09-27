@@ -59,7 +59,7 @@ LEGACY_789 = "http://45.32.81.33:789"
 # Historical secrets from the report (used ONLY to check whether they
 # were rotated: never displayed in cleartext in the output)
 OLD_SECRETS = {
-    "access_token_secret": "REDACTED_JWT_SECRET",
+    "access_token_secret": os.environ.get("EILIK_JWT_SECRET", "<redacted — 6876371f…>"),
     "dashscope_prefix": "sk-816c38d76e0849ccb",
     "azure_prefix": "3jICMOr3jsX93Q7a",
     "appcode": "d6b4b4a3a77649019ea26cccac59d0a9",

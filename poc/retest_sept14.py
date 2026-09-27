@@ -6,23 +6,24 @@ Eterniti Security — EnergizeLab audit retest day 3
 Chaque check est NON-DESTRUCTIF (lecture seule ou probes vides).
 Sortie: RETEST_SEPT14.md avec statut OPEN/FIXED/PARTIAL pour chaque EK.
 """
+import os
 import requests, json, time, base64, socket, hashlib, hmac, urllib.parse, datetime
 import jwt as pyjwt
 
 # ── Credentials (du vault, inchangés depuis le 02/09) ─────────────────────
-SECRET = 'REDACTED_JWT_SECRET'
-REFRESH_SECRET = 'REDACTED_REFRESH_SECRET'
+SECRET = os.environ['EILIK_JWT_SECRET']
+REFRESH_SECRET = os.environ['EILIK_JWT_SECRET']
 ADMIN_9090 = 'http://45.32.81.33:9090'
 AUTH_9080 = 'http://auth.energizelab.com.cn:9080'
 AI_8000 = 'http://ai.energizelab.com.cn:8000'
 DOMESTIC_9090 = 'http://8.129.236.211:9090'
 LEGACY_789 = 'http://45.32.81.33:789/software/energizelab/robot/user'
-REDIS_HOST, REDIS_PORT, REDIS_PWD = '123.57.147.163', 6379, 'REDACTED_REDIS'
-MYSQL_HOST, MYSQL_USER, MYSQL_PWD = 'rm-2ze4h2mqmkf6c06i1mo.mysql.rds.aliyuncs.com', 'energizelab_admin', 'REDACTED_MYSQL'
-AK_ID = 'LTAI5tJRcvq9StcmobHaH6Ff'
-AK_SECRET = 'REDACTED_AK_SECRET'
-DASH_KEY = 'REDACTED_DASHSCOPE'
-AZURE_KEY = 'REDACTED_AZURE'
+REDIS_HOST, REDIS_PORT, REDIS_PWD = '123.57.147.163', 6379, os.environ['EILIK_REDIS_PWD']
+MYSQL_HOST, MYSQL_USER, MYSQL_PWD = 'rm-2ze4h2mqmkf6c06i1mo.mysql.rds.aliyuncs.com', 'energizelab_admin', os.environ['EILIK_MYSQL_PWD']
+AK_ID = os.environ['EILIK_OSS_AK']
+AK_SECRET = os.environ['EILIK_JWT_SECRET']
+DASH_KEY = os.environ.get('EILIK_DASHSCOPE', '')
+AZURE_KEY = os.environ.get('EILIK_AZURE', '')
 DEVICE_RSA_PUB = """-----BEGIN PUBLIC KEY-----
 MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAoq+Xsh5DM05KYFj/aKnC
 3PbRtxHdM4NmRzalS+Nw7ShAsP7UZEoZmrO4D8UvxIYbsEEheYx0nls+YuD2XK4w
@@ -145,7 +146,7 @@ do('EK-27 SSH root', ek27)
 def ek29():
     r = S.get('http://file.energizelab.com.cn/', timeout=10)
     import subprocess
-    out = subprocess.run(['sshpass','-p','REDACTED_SSH_ROOT','ssh','-o','StrictHostKeyChecking=no','-o','ConnectTimeout=8','root@45.32.81.33','ls /www/wwwroot/nicon.edu.pk/wp-admin/images/ZsDqxWT.php 2>/dev/null && echo SHELL_EXISTS'], capture_output=True, text=True, timeout=20)
+    out = subprocess.run(['sshpass','-p',"$EILIK_SSH_PWD",'ssh','-o','StrictHostKeyChecking=no','-o','ConnectTimeout=8','root@45.32.81.33','ls /www/wwwroot/nicon.edu.pk/wp-admin/images/ZsDqxWT.php 2>/dev/null && echo SHELL_EXISTS'], capture_output=True, text=True, timeout=20)
     has_shell = 'SHELL_EXISTS' in out.stdout
     return ('OPEN', 'Webshells toujours présents') if has_shell else ('PARTIAL', f'Webshell non trouvé (peut-être supprimé)')
 do('EK-29 Compromission tierce', ek29)
@@ -309,7 +310,7 @@ do('EK-83 Écriture OSS', ek83_oss)
 
 def ek64_feishu():
     r = S.post('https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal',
-                json={'app_id':'cli_a9ea04a6cbf81cc2','app_secret':'REDACTED_FEISHU'}, timeout=15)
+                json={'app_id':'cli_a9ea04a6cbf81cc2','app_secret':os.environ.get('EILIK_FEISHU_SECRET', '')}, timeout=15)
     return ('OPEN', 'Feishu token émis') if r.json().get('code') == 0 else ('FIXED', 'Rejeté')
 do('EK-64 Feishu workspace', ek64_feishu)
 

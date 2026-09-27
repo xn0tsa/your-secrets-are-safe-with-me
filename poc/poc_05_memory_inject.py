@@ -26,6 +26,7 @@ answer is journalized by the vendor in chat_data.eilikoqa.
 
 import sys, json, time, base64
 import redis
+import os
 import requests
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives import hashes
@@ -37,7 +38,7 @@ DEVICES = {
     'yamasammy': 'EA78F643-6AB6-3DF8-B90B-7BD8F9184A1D',
 }
 
-REDIS_HOST, REDIS_PORT, REDIS_PWD = '123.57.147.163', 6379, 'REDACTED_REDIS'   # EK-26
+REDIS_HOST, REDIS_PORT, REDIS_PWD = '123.57.147.163', 6379, os.environ['EILIK_REDIS_PWD']   # EK-26
 AUTH = 'http://auth.energizelab.com.cn:9080'
 AI   = 'http://ai.energizelab.com.cn:8000'
 MODE = '4101000'
