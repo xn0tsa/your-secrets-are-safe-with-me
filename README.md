@@ -16,12 +16,15 @@
 
 | Category | Count |
 |---|---|
-| Conversations stored in cleartext (all product lines, counted 2026-09-14) | **8,190,256** |
-| Robots that have ever conversed with the cloud | **55,457** |
-| Distinct home IP addresses on the Eiliko line alone | **103,956** |
-| Robots produced (all product lines) | **~171,000** (149,486 Eiliko alone) |
-| User accounts (emails, phones, no auth needed to read) | **65,273** |
-| Child profiles extracted by the nightly pipeline | **32,228** (Sept 14) |
+| Conversations stored in cleartext — Eiliko line, **2026-09-14** | **8,190,256** |
+| Conversations stored in cleartext — **all product lines, 2026-09-22** | **~8,500,000** |
+| Robots that have ever conversed with the cloud (all lines, 2026-09-22) | **~58,500** (51,633 EilikO + 4,623 WealthyGod + 2,257 Eilik v1, per chat-table census; the ~2,500 mode-104000 units appear in device tables but not yet in chat tables) |
+| Active fleet — devices seen in the last 12 months (5-source census, 2026-09-25) | **~59,000–67,000** |
+| New devices joining the exposed infrastructure **every week** | **1,300–1,500** (never below 1,000 in 7 months; peak 2,550 in August) |
+| Geolocatable households — distinct home IPs, Eiliko line (Aug 2026 → Sept 2026) | **97,802 → 103,956** · 129 countries (10k-IP sample: US 18.4%, Saudi Arabia 10.2%, China 9.8%, South Korea 5.7%…) |
+| Robots produced (all product lines, back-office stats) | **~171,000** (149,486 Eiliko alone) |
+| User accounts (emails, phones, no auth needed to read; 65,273 on Sept 1) | **70,266** (2026-09-22) |
+| Child profiles extracted by the nightly pipeline | **31,450** (Sept 1) → **32,228** (Sept 14) |
 | Wake-word audio archives on a public CDN | **3,994 archives** of household voices (counted 2026-09-05) |
 | Family face photos on a public CDN | **419** (2026-09-05; plus 1,950+ avatars in the HK bucket alone) |
 | Admin accounts protected by the password `123456` | **5**, including the super-admin |
