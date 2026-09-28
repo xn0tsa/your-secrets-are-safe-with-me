@@ -181,8 +181,6 @@ The last detail is the one that makes it a glass house: **nothing is logged**. T
 
 ---
 
----
-
 ## You Can Tell the Robot What to Believe
 
 The nightly pipeline builds a profile of each child: name, age, family, preferences ([EK-45](findings/06-privacy.md#EK-45)). It turns out that profile is not just an analytics artifact. **It is the robot's live belief system, and it lives in a public Redis key** ([EK-51](findings/05-behavior.md#EK-51)).
