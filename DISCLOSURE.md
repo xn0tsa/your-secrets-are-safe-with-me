@@ -6,10 +6,10 @@ This file documents the disclosure process for the vulnerabilities described in 
 
 | Date (2026) | Event |
 |---|---|
-| June – August | Research phases 1–59: static analysis, live API testing (auditor-owned devices first), firmware reverse engineering. All intrusive tests time-boxed, minimized, restored. |
+| June – August | Research phases 1–59: static analysis, live API validation (auditor-owned devices first), firmware reverse engineering. Production-impacting checks were limited and restored; individual test scope is recorded in the findings. |
 | Late August | First vendor notification attempts (see Channels below). No response. |
 | **2026-09-01** | Master report finalized (376 raw findings, 93 EKs). **Retest #1** — non-destructive re-verification of all findings. Vendor notified of report availability. No response. |
-| **2026-09-09** | **Retest #2** — 8+ days after first notification: LFI still open, **zero secrets rotated**, full attack chain unmodified. No vendor response. |
+| **2026-09-09** | **Retest #2** — 8+ days after first notification: LFI still open, **zero secrets rotated**, reported attack paths remain available. No vendor response. |
 | 2026-09-15 | 72-hour final deadline communicated to vendor (see below). CFP submitted to POC 2026 conference. |
 | **2026-09-14** | **Retest #3** — 12 days after first notification: **42 of 44 remotely testable findings still OPEN**. Only one fix deployed (`/api/user/list` → 401, EK-13) plus one partial cleanup (biometric CDN folders). Zero secrets rotated. Webshells still on the server. Third-party super-admin accounts still active. |
 | 2026-09-15 → 18 | 72-hour deadline expired with no vendor response. Third-party actor still active throughout. |
@@ -19,8 +19,8 @@ This file documents the disclosure process for the vulnerabilities described in 
 ## Notification channels used (no response on any)
 
 1. **Email** — vendor public/contact addresses, with report summary and proof-of-concept references.
-2. **SMTP relay via the vendor's own transactional sender** (the OTP sender account) — message delivered to vendor inboxes from a vendor-owned address, proving mailbox access without publishing anything.
-3. **Feishu (Lark) internal workspace** — the vendor's own bot, via the exposed test endpoint (EK-71), posted a disclosure notice with contact details.
+2. **SMTP relay via the vendor's transactional sender** (the OTP sender account) — a disclosure message was delivered to vendor inboxes from a vendor-owned address.
+3. **Feishu (Lark)** — a disclosure notice with contact details was submitted through the vendor's bot using the exposed test endpoint (EK-71).
 4. **In-app feedback ticket** — created through the official feedback API with the researcher's real email address.
 5. **Third-party pressure** — a technology journalist (The Verge) contacted the vendor for comment on the findings; no response was received through that channel either.
 

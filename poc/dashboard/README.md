@@ -24,7 +24,7 @@ open http://localhost:8080
 
 | Section | Data |
 |---------|------|
-| **Overview** | Stats + proven attack chains |
+| **Overview** | Statistics and validated vulnerability paths |
 | **Users** | Users with avatar, email, phone, robot count, psychological profile summary |
 | **User Detail** | Full profile: robots (BLE MACs), psychological profile, latest conversations, login history with IPs |
 | **Conversations** | Voice transcripts, searchable by content / IP / robot SN |

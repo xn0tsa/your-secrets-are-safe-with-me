@@ -64,14 +64,14 @@ $re = exec("python3.10 panxer.py " . json_encode(json_decode(bzdecompress(file_g
 
 <a id="EK-29"></a>
 <a id="EK-50"></a>
-## EK-29 / EK-50 · CRITICAL · Active third-party compromise + server backdoor
+## EK-29 / EK-50 · CRITICAL · Evidence of third-party compromise and a persistent server backdoor
 
 - **~19 webshells** on `nicon.edu.pk` (vocational institute, Rawalpindi; same `www` user, same php-fpm) deployed March 2026, one day after Let's Encrypt certs for both Pakistani domains were issued on this very box (2026-03-22 05:09 and 05:16 GMT, the cryptographic proof of co-hosting), operated from C2 `mozv6e.ncndwx.top` (IPs 23.146.72.90, 103.167.135.37): a file-manager shell capable of browsing the whole disk, including `/www/wwwroot/45.32.81.33/software/energizelab/robot/` (OTA channels `103003`, `1103003`, `2103000`, `4101000`) owned by `www` **writable**: zero barrier to poisoning the fleet's firmware (P59-C-02).
 - **`/var/.a/`**: a Node.js root web-terminal backdoor (port 34188, password `[redacted]`, file manager + upload), created 2026-06-18, dormant (no node_modules) but installable with one command.
 - The OneAV antivirus: 291K heartbeat log lines, zero detections.
 
 **Retest 2026-09-01**: ❌ OPEN: `/var/.a` still present (observed via SSH).
-**Fix**: full forensics, purge the webshells and `/var/.a`, rotate every secret on the assumption the attacker already read the vault, migrate off the box, and report the C2. Then explain to two Pakistani institutions why they were co-located with a children's toy company on a box nobody monitored.
+**Fix**: conduct a full forensic review, remove the webshells and `/var/.a`, rotate secrets on the assumption that they may have been exposed, migrate off the shared server, report the C2, and coordinate remediation with the co-hosted organizations.
 
 ---
 

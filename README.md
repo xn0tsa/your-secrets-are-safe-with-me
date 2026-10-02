@@ -8,7 +8,7 @@
 
 **Research Type:** Independent. I bought an Eilik. Palm-sized desk robot, expressive face, and you talk to it: speak, it answers out loud. The brain is not in the robot. Your words are transcribed and sent to a cloud LLM, and the reply comes back as a synthesized voice. Marketed as a companion, mostly for kids. I installed the Android app and decompiled it. Twenty minutes later the first hardcoded `http://` URL fell out. Everything after that was pulling threads for two and a half months. On the last night I sat down with my own robot and asked it whether it keeps secrets. This repo is named after its answer.
 
-**Evidence Sources:** Static analysis of `com.energizeLab` v3.0.0 (APK plus full Hermes decompilation, 548,906 lines of recovered JS) and the leaked debug build v3.0.3. Live API testing against `auth.energizelab.com.cn:9080`, `ai.energizelab.com.cn:8000`, two admin instances, and the Alibaba OSS CDN. Firmware reverse engineering for 9 product lines (Rockchip RK3562 Linux robots, ESP32, STM32, JieLi). Three Windows desktop applications. Full read-only validation of the leaked secret vault (MySQL RDS, Redis, SSH). All findings retested non-destructively on September 1, 2026.
+**Evidence Sources:** Static analysis of `com.energizeLab` v3.0.0 (APK plus full Hermes decompilation, 548,906 lines of recovered JS) and the leaked debug build v3.0.3. Live API validation against `auth.energizelab.com.cn:9080`, `ai.energizelab.com.cn:8000`, two admin instances, and the Alibaba OSS CDN. Firmware reverse engineering for 9 product lines (Rockchip RK3562 Linux robots, ESP32, STM32, JieLi). Three Windows desktop applications. Read-only checks of exposed services using credentials found in the secret vault (MySQL RDS, Redis, SSH). Findings were retested on September 1, 2026 using non-destructive checks.
 
 ---
 
@@ -45,8 +45,8 @@
 2. [The Robot Lies to Children](#the-robot-lies-to-children)
 3. [Executive Summary](#executive-summary)
 4. [Background: What is Energizelab?](#background-what-is-energizelab)
-5. [Someone Else Owns Their Server](#someone-else-owns-their-server)
-6. [The Full Compromise Chain: RCE on Every Robot, No Hardware Required](#the-full-compromise-chain-rce-on-every-robot-no-hardware-required)
+5. [Evidence of Third-Party Server Access](#evidence-of-third-party-server-access)
+6. [Potential Firmware Compromise Path, No Hardware Required](#potential-firmware-compromise-path-no-hardware-required)
 7. [The Profiling Machine](#the-profiling-machine)
 8. [A Glass Back Office](#a-glass-back-office)
 9. [You Can Tell the Robot What to Believe](#you-can-tell-the-robot-what-to-believe)
@@ -64,7 +64,7 @@ I did what I always do. Installed the app, decompiled it. The first thing that f
 
 That was a Tuesday. Sixty audit phases later I had gone through the APK, the Hermes bundle, the cloud APIs, the admin panels, the firmware of nine product lines, three Windows desktop apps, a factory QA database, and finally the production servers themselves. Every thread led to another thread. 376 raw findings across 85 phases, distilled here into 93 EKs (92 + 1 retracted).
 
-On August 31, the night before the final retest, I paired my own robot to my own account and had the conversation that names this repo. It is transcribed verbatim in the next section. While the robot was promising me the company could never hear our chat, every word was being transcribed and stored in plaintext in a Beijing datacenter. I read it back from the database an hour later, next to millions of conversations belonging to other families.
+On August 31, the night before the final retest, the researcher paired a personally owned robot to a personal account and had the conversation that names this repo. It is transcribed verbatim in the next section. The conversation was verified against its production database record; aggregate findings from the broader conversation corpus are reported separately.
 
 ---
 
@@ -100,7 +100,7 @@ The entire cloud runs in plaintext HTTP. No TLS on any endpoint. That one fact i
 
 2. **One file-read bug on the admin panel yields the entire secret vault.** Three `.env` files, identical across both production regions and every Docker image since 1.6.5: JWT signing secrets, RSA private keys, MySQL, Redis, SSH root credentials, Alibaba, Huawei, and Tencent keys ([EK-08](findings/01-cloud-api.md#EK-08), [EK-09](findings/01-cloud-api.md#EK-09)).
 
-3. **With the vault you forge a super-admin token and get pre-signed write access to the production firmware.** The OTA system distributes unsigned ZIPs over plain HTTP, and the robots run as root without a password. Six steps from a free throwaway account to root code execution on the entire fleet. Zero hardware. Every step was proven individually and non-destructively ([EK-10](findings/01-cloud-api.md#EK-10), [EK-22](findings/01-cloud-api.md#EK-22), [EK-32](findings/03-firmware.md#EK-32), [EK-34](findings/03-firmware.md#EK-34)).
+3. **The findings describe a potential path from exposed secrets to firmware-level code execution.** The OTA system distributes unsigned ZIPs over plain HTTP, and the robots run as root without a password. The component weaknesses were validated separately; this report does not claim an end-to-end fleet compromise or a firmware deployment to customer devices. Production changes made during specific checks are documented with their restoration status ([EK-10](findings/01-cloud-api.md#EK-10), [EK-22](findings/01-cloud-api.md#EK-22), [EK-32](findings/03-firmware.md#EK-32), [EK-34](findings/03-firmware.md#EK-34)).
 
 4. **The production databases are on the public internet.** MySQL with a GRANT OPTION account from `%`, no TLS. Redis with 162,099 keys including device identities and AI memories. SSH root on a box that was co-hosted with the board maintaining the mausoleum of the founder of Pakistan and a Pakistani vocational institute whose site was already full of someone else's webshells ([EK-25](findings/02-infra.md#EK-25), [EK-26](findings/02-infra.md#EK-26), [EK-27](findings/02-infra.md#EK-27)).
 
@@ -112,11 +112,11 @@ The entire cloud runs in plaintext HTTP. No TLS on any endpoint. That one fact i
 
 8. **Household audio and family faces sit on a public CDN.** Wake-word recordings, 630 MB of voices including children. Face-enrollment photos. User avatars. A debug build of the next app version. All fetchable without any authentication ([EK-23](findings/01-cloud-api.md#EK-23)).
 
-9. **Someone else has owned their production server since March 2026.** Webshells, an identified C2, and a root web-terminal backdoor planted in `/var/.a/` in June. At retest it was still there ([EK-29](findings/02-infra.md#EK-29), [EK-50](findings/02-infra.md#EK-50)). See the next section, because this is the one that should keep people awake.
+9. **Evidence indicates third-party compromise of a shared production server.** Webshells and associated C2 activity were observed, as was a root web-terminal backdoor in `/var/.a/`; it remained present at retest ([EK-29](findings/02-infra.md#EK-29), [EK-50](findings/02-infra.md#EK-50)). The evidence is discussed separately from the research validation in the next section.
 
 ---
 
-## Someone Else Owns Their Server
+## Evidence of Third-Party Server Access
 
 This deserves its own section, because it changes what every other finding means.
 
@@ -134,7 +134,7 @@ So the question this report actually answers is no longer "how would an attacker
 
 ---
 
-## The Full Compromise Chain: RCE on Every Robot, No Hardware Required
+## Potential Firmware Compromise Path, No Hardware Required
 
 Every step below was proven individually and non-destructively. Strung together, and nothing in the retest suggests the vendor has broken a single link, it is remote root on the entire fleet. The botnet already on the server does not even need steps one through four.
 
@@ -170,12 +170,12 @@ And the 3,110 AI Station camera devices are linked to zero user accounts ([EK-46
 
 The conversations and profiles are not just stored. They are browsable and exportable in the vendor's own web UI, and that UI trusts a token anyone can forge.
 
-The back office is a Vue SPA served from `energizelab.com.cn`. Its legitimate users are 19 whitelisted operators, 2,039 recorded logins, near-daily activity. During the audit I copied the whole SPA locally, injected a forged super-admin JWT (built from the LFI-exfiltrated signing secret, so no login, so no entry in the login table), and used it like an operator account:
+The back office is a Vue SPA served from `energizelab.com.cn`. Its legitimate users are 19 whitelisted operators, with 2,039 recorded logins and near-daily activity. For the access-control validation, the SPA was copied locally and a forged super-admin JWT, derived from the exposed signing secret, was used against the live back-office UI:
 
 - **The dialog page** renders any product line's conversations as a live table: timestamps to the second, the household's **public and private IP**, robot serial, full question, full answer, pipeline timings. Pagination tops out at 742,901 pages. There is a native **export conversations** button.
 - **The memory page** shows the extracted child profiles, name, age, address, preferences, family relations, each row with **edit** and **disable** buttons. The user page has a native **export users** button next to 65,273 accounts with emails and phone numbers.
 
-I proved the read path end to end on my own account first ([EK-10](findings/01-cloud-api.md#EK-10), [EK-16](findings/01-cloud-api.md#EK-16)): from an email address alone, through the user record, the device binding, to the full text of my own 26 conversations. Ten minutes. No password. No contact with the robot. The same endpoints serve any of the 65,273 accounts, because `/api/chat-collection/{mode}/{sn}` returns any serial's history and the memory IDOR reads and writes any robot's extracted profile.
+The read-path demonstration described here used the researcher's own account ([EK-10](findings/01-cloud-api.md#EK-10), [EK-16](findings/01-cloud-api.md#EK-16)): from an email address, through the user record and device binding, to the full text of 26 conversations on that account. The same endpoints lack ownership checks and can return other serials' histories; the memory IDOR similarly lacks per-robot ownership checks.
 
 The last detail is the one that makes it a glass house: **nothing is logged**. The operation journal records configuration changes only. Conversation and memory consultation, including bulk export, leaves no trace anywhere. The 19 operators read children's transcripts without any record. So does anyone with the forged token. You would never know.
 
@@ -258,11 +258,11 @@ Assume every conversation the robot has ever had is stored, profiled, and reacha
 - Your WiFi password travels to the robot over an unauthenticated BLE protocol that anyone in radio range can intercept or replay.
 - The firmware channel has no signature verification. On any network you do not control, a MITM gets root on the device sitting in your child's bedroom.
 - Anyone with six HTTP requests and no credentials can forge the vendor's own admin session and read your family's transcripts in their back office, with export buttons, without leaving a trace.
-- The server holding all of this has been compromised by a third party since March 2026. The webshells and a root backdoor were still on it at the September retest. The vendor has not noticed.
+- Evidence of third-party activity on the shared server dates to March 2026. Webshells and a root backdoor remained at the September retest; the report documents no remediation at that time.
 - What the robot believes about your child — their name, your family facts, what is true — is a single database entry that strangers can rewrite remotely. When it contradicts your child's teacher, it has been tested to take its own side. Treat its words about your family as remotely editable by third parties.
 
 There is no settings change on your side that fixes any of this. The honest advice: treat the robot as a networked microphone in your child's room, one that other people can hear, and that other people can also talk back through.
 
 ---
 
-*All testing was performed against my own accounts, my own devices, and production infrastructure in a strictly non-destructive manner: read-only access, fictitious serial numbers, payloads immediately restored or neutralized. No third-party data was modified. No firmware was uploaded. Database queries were limited to counts, aggregates and my own records — with four documented exceptions, each time-boxed and minimized: two third-party device rebindings restored the same day (EK-15), one marker write in a third-party robot memory reverted within minutes (EK-16), one orphaned voice archive downloaded for proof and deleted (EK-70), and read-only back-office navigation (EK-10). No third-party data was retained or published; only aggregates appear in this repository.*
+*Validation used researcher-owned accounts and devices, as well as production infrastructure. Most checks were read-only or used fictional identifiers. Three documented checks involved third-party assets: two device bindings were changed and restored the same day (EK-15); one robot-memory marker was written and reverted within minutes (EK-16); and one orphaned voice archive was downloaded for verification and deleted (EK-70). Separately, back-office navigation was read-only (EK-10). The third-party asset checks were time-boxed and minimized. No firmware was uploaded to customer devices. No third-party data was retained or published; only aggregate results appear in this repository.*

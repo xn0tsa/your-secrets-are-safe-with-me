@@ -187,11 +187,11 @@ A standard user JWT reads everything, paginated (counted 2026-09-01): `/api/user
 ---
 
 <a id="EK-15"></a>
-## EK-15 · CRITICAL · Device rebinding in 3 HTTP calls ("robot theft")
+## EK-15 · CRITICAL · Missing ownership checks allow device rebinding
 
-`GET /api/user-device/list` (victim's ud_id) → `DELETE /api/user-device/{id}` (no ownership check) → `POST /api/user-device/create` (bind to attacker account). Proven twice on third-party devices with restoration (2026-08-15); plus `PATCH /api/device-use-stat/{sn}/lock` = permanent DoS.
+`GET /api/user-device/list` (another user's `ud_id`) → `DELETE /api/user-device/{id}` (no ownership check) → `POST /api/user-device/create` (bind to the caller's account). The sequence was validated twice on third-party devices on 2026-08-15; both bindings were restored. The related `PATCH /api/device-use-stat/{sn}/lock` can cause a persistent denial of service.
 
-**Retest 2026-09-01**: ❌ OPEN: replayed on the auditor's own device (`poc/hijack/`).
+**Retest 2026-09-01**: ❌ OPEN: replayed on an auditor-owned device (`poc/hijack/`).
 
 ---
 

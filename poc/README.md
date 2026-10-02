@@ -1,6 +1,6 @@
 # PoCs: Eilik / Energizelab
 
-All PoCs are **non-destructive**: read-only checks, markers on fictional SNs/emails, no uploads, no writes to third-party data. They reproduce the chains documented in `../findings/`.
+PoC scope and impact vary. Some checks are read-only or use fictional identifiers. The device PoCs listed below were replayed on auditor-owned hardware; historical validations involving production state or third-party devices are documented in the findings, including restoration status. Review the relevant finding and retest notes before running a script.
 
 ## Prerequisites
 
@@ -59,14 +59,14 @@ findings are revalidated via `../artifacts/`, see `RETEST.md`).
 
 ## `hijack/`: robot takeover (EK-15/36)
 
-PoCs replayed on the auditor's own robot on 2026-09-01:
-`setup_rogue_ap.sh` (re-provisioning to an attacker AP), `fake_ai_server.py`
+Device PoCs were replayed on an auditor-owned robot on 2026-09-01:
+`setup_rogue_ap.sh` (re-provisioning to a test AP), `fake_ai_server.py`
 (spoofed AI server), `history_poison*.py` (session poisoning).
 
 ## `dashboard/`: mass-exfiltration proof
 
-Flask + PostgreSQL app that syncs (via the unscoped APIs, [EK-13](../findings/01-cloud-api.md#EK-13)) and serves
-the demonstration dashboard: 65K users with psychological profiles, 8.3M
+Flask + PostgreSQL app that syncs via the unscoped APIs ([EK-13](../findings/01-cloud-api.md#EK-13)) and serves
+a demonstration dashboard: 65K users with psychological profiles, 8.3M
 conversations with IPs, robots, geolocation.
 
 ```bash
