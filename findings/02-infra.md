@@ -71,7 +71,7 @@ $re = exec("python3.10 panxer.py " . json_encode(json_decode(bzdecompress(file_g
 - The OneAV antivirus: 291K heartbeat log lines, zero detections.
 
 **Retest 2026-09-01**: ❌ OPEN: `/var/.a` still present (observed via SSH).
-**Fix**: conduct a full forensic review, remove the webshells and `/var/.a`, rotate secrets on the assumption that they may have been exposed, migrate off the shared server, report the C2, and coordinate remediation with the co-hosted organizations.
+**Fix**: full forensics, purge the webshells and `/var/.a`, rotate every secret on the assumption the attacker already read the vault, migrate off the box, and report the C2. Then explain to two Pakistani institutions why they were co-located with a children's toy company on a box nobody monitored.
 
 ---
 

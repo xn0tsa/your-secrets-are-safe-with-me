@@ -31,12 +31,12 @@ Historical working documents kept as-is are noted below.
 | Orphan AI Stations: 3,110/3,110 (0% linked) | ✅ worse ([EK-46](../findings/06-privacy.md#EK-46)) |
 | Super-admin id=1 hash = `md5(md5("123456")+salt)` | ✅ confirmed offline ([EK-49](../findings/02-infra.md#EK-49)) |
 
-The [EK-15](../findings/01-cloud-api.md#EK-15) / [EK-17](../findings/01-cloud-api.md#EK-17) findings (device rebinding, account deletion) were replayed on the
+The [EK-15](../findings/01-cloud-api.md#EK-15) / [EK-17](../findings/01-cloud-api.md#EK-17) findings (robot theft, account deletion) were replayed on the
 auditor's own devices/accounts: PoCs in `../poc/hijack/`.
 
 *Note: the firmware flasher source in `firmware/webapp_custom/` is kept as a
 historical working artifact.*
 
 The `backoffice_spa/` copy (92 chunks navigated with a forged JWT) was removed
-for readability: retrieve it from `https://energizelab.com.cn` and see P42/[EK-45](../findings/06-privacy.md#EK-45)
-for the forged-token access-control validation.
+for readability: grab it from `https://energizelab.com.cn` and see P42/[EK-45](../findings/06-privacy.md#EK-45)
+for the token-injection walkthrough.
