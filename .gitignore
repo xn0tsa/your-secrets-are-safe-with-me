@@ -1,0 +1,11 @@
+.env
+.env.domestic.lfi
+*.jsonl
+*.hprof
+*.apk
+*.bin
+__pycache__/
+*.pyc
+.dji_mqtt_credentials.json
+jwt_token
+poc/ artifacts/
